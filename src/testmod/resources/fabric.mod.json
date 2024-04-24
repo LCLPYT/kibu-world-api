@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "kibu-world-api-test",
+  "version": "${version}",
+  "name": "kibu-world-api Test Mod",
+  "description": "A modding library for FabricMC.",
+  "authors": [
+    "LCLP"
+  ],
+  "contact": {
+    "homepage": "https://github.com/LCLPYT/kibu-world-api",
+    "sources": "https://github.com/LCLPYT/kibu-world-api"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["work.lclpnet.test.KibuWorldTestMod"]
+  },
+  "mixins": [],
+  "depends": {
+    "fabricloader": ">=0.15.3",
+    "minecraft": "1.20.4",
+    "java": ">=17",
+    "fabric-api": "*",
+    "fantasy": ">=${fantasy_version}"
+  },
+  "suggests": {},
+  "custom": {
+    "modmenu": {
+      "badges": ["library"]
+    }
+  }
+}
