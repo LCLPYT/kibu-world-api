@@ -41,8 +41,8 @@ import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 Identifier id = new Identifier("foo", "bar");
 Optional<RuntimeWorldHandle> handle = worldManager.openPersistentWorld(id);
 ```
-This example will load the world stored in `<level name>/dimensions/foo/bar` and return the fantasy world handle.
-On a dedicated served, `<level name>` will be the level name defined in the `server.properties` file, defaulting to **"world"**.
+This example will load the world stored in `<level name>/dimensions/foo/bar` and return a fantasy world handle.
+On a dedicated server, `<level name>` will be the level name defined in the `server.properties` file, defaulting to **"world"**.
 
 You can put any minecraft world into that location and the world will be loaded correctly.
 
@@ -58,13 +58,14 @@ This example will try to load a `RuntimeWorldConfig` from the level.dat file `<l
 If the config cannot be loaded, the `Optional` will be empty.
 
 ### Getting the `RuntimeWorldHandle` for a `ServerWorld`
-In some cases, you may not have the `RuntimeWorldHandle` for a world you created earlier.
+In some cases, you may not have the `RuntimeWorldHandle` for a world created by some other mod.
 
-One use case could be that you have a mod that creates runtime worlds.
-Another mod provides a command that can be used to teleport / unload / delete runtime worlds.
-Those kinds of behaviour require the `RuntimeWorldHandle`, a given `ServerWorld` was created with.
+One use case could be that some mod created aruntime world.
+Your mod provides a command that can be used to unload / delete runtime worlds.
+For those kinds of behaviour, the `RuntimeWorldHandle` for a given `ServerWorld` is required.
+Your mod can't know or get the handle for the world, unless the other mod provides an API for that.
 
-The kibu-world-api automatically keeps track of all `RuntimeWorldHandle`s and provides an API to interact with them.
+Kibu-world-api automatically keeps track of all `RuntimeWorldHandle`s and provides an API to interact with them.
 ```java
 import net.minecraft.server.world.ServerWorld;
 
