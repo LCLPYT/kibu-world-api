@@ -1,36 +1,27 @@
 {
 	"schemaVersion": 1,
-	"id": "testmod",
+	"id": "kibu-world-api",
 	"version": "${version}",
-	"name": "Test Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Kibu World API",
+	"description": "API for loading / unloading worlds with the fantasy mod",
 	"authors": [
-		"Me!"
+		"LCLP"
 	],
 	"contact": {
-		"homepage": "https://github.com/LCLPYT/fabric-mod-boilerplate",
-		"sources": "https://github.com/LCLPYT/fabric-mod-boilerplate"
+		"homepage": "https://github.com/LCLPYT/kibu",
+		"sources": "https://github.com/LCLPYT/kibu"
 	},
-	"license": "CC0-1.0",
-	"icon": "assets/testmod/icon.png",
+	"license": "MIT",
+	"icon": "assets/kibu-world-api/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
-		],
-		"client": [
-			"com.example.ExampleModClient"
-		],
-		"fabric-datagen": [
-			"com.example.ExampleModDataGenerator"
+			"work.lclpnet.kibu.world.init.KibuWorldsInit"
 		]
 	},
 	"mixins": [
-		"testmod.mixins.json",
-		{
-			"config": "testmod.client.mixins.json",
-			"environment": "client"
-		}
+		"kibu-world-api.mixins.json",
+		"kibu-world-api-fantasy.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.3",
@@ -38,5 +29,11 @@
 		"java": ">=17",
 		"fabric-api": "*"
 	},
-	"suggests": {}
+	"suggests": {},
+	"custom": {
+		"modmenu": {
+			"badges": ["library"],
+			"parent": "kibu"
+		}
+	}
 }
