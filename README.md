@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation 'work.lclpnet.mods.kibu:kibu-world-api:0.6.0+1.20.4'  // replace with your version
+    modImplementation 'work.lclpnet.mods.kibu:kibu-world-api:0.6.1+1.20.6'  // replace with your version
 }
 ```
 All available versions can be found [here](https://repo.lclpnet.work/#artifact/work.lclpnet.mods.kibu/kibu-world-api).

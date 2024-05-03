@@ -21,11 +21,11 @@ public class FantasyMixin {
     @Shadow @Final private MinecraftServer server;
 
     @Inject(
-            method = "openTemporaryWorld",
+            method = "openTemporaryWorld(Lnet/minecraft/util/Identifier;Lxyz/nucleoid/fantasy/RuntimeWorldConfig;)Lxyz/nucleoid/fantasy/RuntimeWorldHandle;",
             at = @At("RETURN"),
             remap = false
     )
-    public void kibu$openTemporaryWorld(RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
+    public void kibu$openTemporaryWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
         RuntimeWorldHandle handle = cir.getReturnValue();
         WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
 

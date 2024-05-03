@@ -10,10 +10,10 @@ import net.minecraft.nbt.NbtHelper;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.entry.RegistryEntryInfo;
 import net.minecraft.resource.DataConfiguration;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Util;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.WorldProperties;
 import net.minecraft.world.dimension.DimensionOptions;
@@ -98,12 +98,9 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
         // vanilla encapsulation
         props.setDifficulty(worldProps.getDifficulty());
-        props.setSpawnAngle(worldProps.getSpawnAngle());
+        props.setSpawnPos(worldProps.getSpawnPos(), worldProps.getSpawnAngle());
         props.setTime(worldProps.getTime());
         props.setTimeOfDay(worldProps.getTimeOfDay());
-        props.setSpawnX(worldProps.getSpawnX());
-        props.setSpawnY(worldProps.getSpawnY());
-        props.setSpawnZ(worldProps.getSpawnZ());
         props.setDifficultyLocked(worldProps.isDifficultyLocked());
         props.setRaining(worldProps.isRaining());
         props.setThundering(worldProps.isThundering());
@@ -173,7 +170,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         RegistryEntry<DimensionType> dimensionType = world.getDimensionEntry();
         DimensionOptions dimensionOptions = new DimensionOptions(dimensionType, chunkGenerator);
 
-        registry.add(DimensionOptions.OVERWORLD, dimensionOptions, Lifecycle.stable());
+        registry.add(DimensionOptions.OVERWORLD, dimensionOptions, RegistryEntryInfo.DEFAULT);
 
         return new DynamicRegistryManager() {
             @SuppressWarnings("unchecked")
@@ -228,8 +225,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
     private WorldGenSettings getWorldGenSettings(Dynamic<NbtElement> dynamic) {
         var worldGenSettingsDynamic = dynamic.get("WorldGenSettings").orElseEmptyMap();
 
-        return WorldGenSettings.CODEC.parse(worldGenSettingsDynamic)
-                .getOrThrow(false, Util.addPrefix("WorldGenSettings: ", logger::error));
+        return WorldGenSettings.CODEC.parse(worldGenSettingsDynamic).getOrThrow();
     }
 
     // from net.minecraft.world.level.storage.LevelStorage.readLevelProperties(java.nio.file.Path, com.mojang.datafixers.DataFixer)

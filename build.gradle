@@ -20,6 +20,9 @@ repositories {
         url "https://repo.lclpnet.work/repository/internal"
     }
     maven {
+        url "https://repo.lclpnet.work/repository/snapshots"
+    }
+    maven {
         url = 'https://maven.nucleoid.xyz/'
     }
 }
@@ -62,14 +65,14 @@ dependencies {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release.set(17)
+	it.options.release.set(21)
 }
 
 java {
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 [jar, remapJar, sourcesJar].each {
