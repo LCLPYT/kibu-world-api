@@ -119,15 +119,18 @@ public class WorldPersistenceService {
 
         ruleMap.forEach((key, rule) -> {
             if (rule instanceof GameRules.BooleanRule booleanRule) {
-                //noinspection unchecked
-                config.setGameRule((GameRules.Key<GameRules.BooleanRule>) key, booleanRule.get());
+                config.setGameRule(cast(key), booleanRule.get());
             } else if (rule instanceof GameRules.IntRule intRule) {
-                //noinspection unchecked
-                config.setGameRule((GameRules.Key<GameRules.IntRule>) key, intRule.get());
+                config.setGameRule(cast(key), intRule.get());
             }
         });
 
         return config;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends GameRules.Rule<T>> GameRules.Key<T> cast(GameRules.Key<?> key) {
+        return (GameRules.Key<T>) key;
     }
 
     @Nullable

@@ -15,15 +15,14 @@ import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
-@Mixin(value = Fantasy.class, remap = false)
+@Mixin(value = Fantasy.class)
 public class FantasyMixin {
 
-    @Shadow @Final private MinecraftServer server;
+    @Shadow(remap = false) @Final private MinecraftServer server;
 
     @Inject(
             method = "openTemporaryWorld(Lnet/minecraft/util/Identifier;Lxyz/nucleoid/fantasy/RuntimeWorldConfig;)Lxyz/nucleoid/fantasy/RuntimeWorldHandle;",
-            at = @At("RETURN"),
-            remap = false
+            at = @At("RETURN")
     )
     public void kibu$openTemporaryWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
         RuntimeWorldHandle handle = cir.getReturnValue();
@@ -36,8 +35,7 @@ public class FantasyMixin {
 
     @Inject(
             method = "getOrOpenPersistentWorld",
-            at = @At("RETURN"),
-            remap = false
+            at = @At("RETURN")
     )
     public void kibu$getOrOpenPersistentWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
         RuntimeWorldHandle handle = cir.getReturnValue();
