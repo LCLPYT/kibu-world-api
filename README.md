@@ -38,7 +38,7 @@ You can load a persisted world from the `<level name>/dimensions/<namespace>/<pa
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
-Identifier id = new Identifier("foo", "bar");
+Identifier id = Identifier.of("foo", "bar");
 Optional<RuntimeWorldHandle> handle = worldManager.openPersistentWorld(id);
 ```
 This example will load the world stored in `<level name>/dimensions/foo/bar` and return a fantasy world handle.
@@ -51,7 +51,7 @@ One of the main purposes of this mod is to restore / load fantasy `RuntimeWorldC
 ```java
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 
-Identifier id = new Identifier("foo", "bar");
+Identifier id = Identifier.of("foo", "bar");
 Optional<RuntimeWorldConfig> config = worldManager.getWorldConfig(id);
 ```
 This example will try to load a `RuntimeWorldConfig` from the level.dat file `<level name>/dimensions/foo/bar/level.dat`.
