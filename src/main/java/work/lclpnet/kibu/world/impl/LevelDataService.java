@@ -105,9 +105,8 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         props.setRaining(worldProps.isRaining());
         props.setThundering(worldProps.isThundering());
 
-        props.getGameRules().setAllValues(worldProps.getGameRules(), null);
-
         if (worldProps instanceof ServerWorldProperties swProps) {
+            props.getGameRules().setAllValues(swProps.getGameRules(), null);
             props.setClearWeatherTime(swProps.getClearWeatherTime());
             props.setRainTime(swProps.getRainTime());
             props.setThunderTime(swProps.getThunderTime());
@@ -197,7 +196,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
     public LevelDataDeserializer.Result deserializeLevelData(NbtCompound levelData, MinecraftServer server) {
         var registryManager = server.getCombinedDynamicRegistries().getCombinedRegistryManager();
         DataFixer dataFixer = server.getDataFixer();
-        Lifecycle registryLifecycle = registryManager.getRegistryLifecycle();
+        Lifecycle registryLifecycle = registryManager.getLifecycle();
 
         var levelDynamic = getLevelProperties(levelData, dataFixer);
         var dynamic = wrap(levelDynamic, registryManager);
