@@ -19,6 +19,7 @@ import net.minecraft.util.Identifier;
 import work.lclpnet.kibu.world.KibuWorlds;
 import work.lclpnet.kibu.world.WorldManager;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class WorldCommand {
@@ -72,7 +73,7 @@ public class WorldCommand {
         }
 
         ServerPlayerEntity player = source.getPlayerOrThrow();
-        player.teleport(world, 0, 100, 0, 0, 0);
+        player.teleport(world, 0, 100, 0, Set.of(), 0, 0, true);
 
         source.sendMessage(Text.literal("Teleported to " + id));
         return 1;
