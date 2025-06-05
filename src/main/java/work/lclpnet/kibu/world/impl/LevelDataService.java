@@ -203,7 +203,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
         WorldGenSettings worldGenSettings = getWorldGenSettings(dynamic);
 
-        NbtCompound data = levelData.getCompound("Data");
+        NbtCompound data = levelData.getCompoundOrEmpty("Data");
         DataConfiguration dataConfiguration = getDataConfiguration(data, dataFixer);
         LevelInfo levelInfo = LevelInfo.fromDynamic(dynamic, dataConfiguration);
 
@@ -230,7 +230,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
     // from net.minecraft.world.level.storage.LevelStorage.readLevelProperties(java.nio.file.Path, com.mojang.datafixers.DataFixer)
     // adjusted so that NbtCompound is used instead
     private Dynamic<NbtElement> getLevelProperties(NbtCompound nbtCompound, DataFixer dataFixer) {
-        NbtCompound data = nbtCompound.getCompound("Data");
+        NbtCompound data = nbtCompound.getCompoundOrEmpty("Data");
         int dataVersion = NbtHelper.getDataVersion(data, -1);
 
         Dynamic<NbtElement> levelProps = DataFixTypes.LEVEL.update(dataFixer, new Dynamic<>(NbtOps.INSTANCE, data), dataVersion);

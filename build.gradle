@@ -1,15 +1,15 @@
 import work.lclpnet.build.task.GithubDeploymentTask
 
 plugins {
-	id 'fabric-loom' version '1.9-SNAPSHOT'
+	id 'fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 	id 'gradle-build-utils' version '1.7.0'
 }
 
-Properties props = buildUtils.loadProperties('publish.properties')  // will be empty, if the file is missing
+Properties props = buildUtils.loadProperties('publish.properties')
 
-version = buildUtils.gitVersion()  // determine project version from the latest git tag on the current branch
 group = project.maven_group
+version = "${project.mod_version}+${project.minecraft_version}"
 
 base {
     archivesName = project.archives_base_name
@@ -19,9 +19,11 @@ repositories {
     maven {
         url "https://repo.lclpnet.work/repository/internal"
     }
+
     maven {
         url "https://repo.lclpnet.work/repository/snapshots"
     }
+
     maven {
         url = 'https://maven.nucleoid.xyz/'
     }
@@ -52,7 +54,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modImplementation "xyz.nucleoid:fantasy:${rootProject.fantasy_version}"
+    modImplementation "xyz.nucleoid:fantasy:${project.fantasy_version}"
 }
 
 [processResources, processTestmodResources].each {
