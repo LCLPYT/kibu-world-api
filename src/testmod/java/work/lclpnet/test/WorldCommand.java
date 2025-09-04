@@ -16,8 +16,14 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.dimension.DimensionTypes;
 import work.lclpnet.kibu.world.KibuWorlds;
 import work.lclpnet.kibu.world.WorldManager;
+import work.lclpnet.kibu.world.init.KibuWorldsInit;
+import xyz.nucleoid.fantasy.Fantasy;
+import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -32,15 +38,41 @@ public class WorldCommand {
         return CommandManager.literal("kibu:world")
                 .requires(s -> s.hasPermissionLevel(2))
                 .then(CommandManager.literal("create")
+                        .executes(this::createTmp))
+                .then(CommandManager.literal("load")
                         .then(CommandManager.argument("id", IdentifierArgumentType.identifier())
-                                .executes(this::createWorld)))
+                                .executes(this::loadWorld)))
                 .then(CommandManager.literal("tp")
                         .then(CommandManager.argument("id", IdentifierArgumentType.identifier())
                                 .suggests(this::worldSuggestions)
                                 .executes(this::tpWorld)));
     }
 
-    private int createWorld(CommandContext<ServerCommandSource> ctx) {
+    private int createTmp(CommandContext<ServerCommandSource> ctx) {
+        MinecraftServer server = ctx.getSource().getServer();
+
+        RuntimeWorldConfig config = new RuntimeWorldConfig()
+                .setDimensionType(DimensionTypes.OVERWORLD)
+                .setDifficulty(Difficulty.NORMAL)
+                .setGenerator(server.getOverworld().getChunkManager().getChunkGenerator())
+                .setSeed(123);
+
+        RuntimeWorldHandle handle;
+
+        try {
+            handle = Fantasy.get(server).openTemporaryWorld(config);
+        } catch (Throwable t) {
+            KibuWorldsInit.LOGGER.error("Failed to create temporary world", t);
+            ctx.getSource().sendError(Text.literal("Failed to create temporary world. More details in the console"));
+            return 0;
+        }
+
+        ctx.getSource().sendMessage(Text.literal("Created temporary world " + handle.getRegistryKey().getValue()));
+
+        return 1;
+    }
+
+    private int loadWorld(CommandContext<ServerCommandSource> ctx) {
         Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
 
         ServerCommandSource source = ctx.getSource();

@@ -1,6 +1,7 @@
 package work.lclpnet.kibu.world.init;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.level.storage.LevelStorage;
@@ -13,6 +14,7 @@ import work.lclpnet.kibu.world.data.LevelDataWriter;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 import work.lclpnet.kibu.world.mixin.fantasy.RuntimeWorldAccessor;
 import xyz.nucleoid.fantasy.RuntimeWorld;
+import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +54,16 @@ public class KibuWorldsInit implements ModInitializer {
 
             if (worldManager instanceof LevelDataWriter writer) {
                 writer.writeLevelData(world);
+            }
+        });
+
+        ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> {
+            WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+
+            if (worldManager instanceof LevelDataWriter writer) {
+                for (RuntimeWorldHandle handle : worldManager.getRuntimeWorldHandles()) {
+                    writer.writeLevelData(handle.asWorld());
+                }
             }
         });
 

@@ -107,9 +107,9 @@ public class WorldPersistenceService {
         GeneratorOptions generatorOptions = properties.getGeneratorOptions();
         config.setSeed(generatorOptions.getSeed());
 
+        config.setSunny(properties.getClearWeatherTime());
         config.setRaining(properties.getRainTime());
         config.setRaining(properties.isRaining());
-        config.setSunny(properties.getClearWeatherTime());
         config.setThundering(properties.isThundering());
         config.setThundering(properties.getThunderTime());
         config.setTimeOfDay(properties.getTimeOfDay());
