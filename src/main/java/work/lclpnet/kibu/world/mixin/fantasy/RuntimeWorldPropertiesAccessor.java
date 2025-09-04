@@ -5,9 +5,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.fantasy.RuntimeWorldProperties;
 
-@Mixin(RuntimeWorldProperties.class)
+@Mixin(value = RuntimeWorldProperties.class, remap = false)
 public interface RuntimeWorldPropertiesAccessor {
 
-    @Accessor
+    @Accessor(remap = false)
     RuntimeWorldConfig getConfig();
 }
