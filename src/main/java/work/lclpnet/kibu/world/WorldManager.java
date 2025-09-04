@@ -34,4 +34,22 @@ public interface WorldManager {
      * @return The runtime world config, or empty if there is no level data to load.
      */
     Optional<RuntimeWorldConfig> getWorldConfig(Identifier identifier);
+
+    /**
+     * Gets the {@link RuntimeWorldConfig} of a {@link xyz.nucleoid.fantasy.RuntimeWorld} with the given dimension identifier.
+     * @param identifier The dimension identifier.
+     * @return The runtime world config of the given {@link xyz.nucleoid.fantasy.RuntimeWorld} dimension,
+     * or empty if there is no {@link xyz.nucleoid.fantasy.RuntimeWorld} with that dimension identifier.
+     */
+    Optional<RuntimeWorldConfig> getRuntimeWorldConfig(Identifier identifier);
+
+    /**
+     * Gets the {@link RuntimeWorldConfig} of a {@link ServerWorld} if it is a {@link xyz.nucleoid.fantasy.RuntimeWorld}.
+     * @param world The runtime world.
+     * @return The runtime world config of the given {@link xyz.nucleoid.fantasy.RuntimeWorld} dimension,
+     * or empty if there given world is not a {@link xyz.nucleoid.fantasy.RuntimeWorld}.
+     */
+    default Optional<RuntimeWorldConfig> getRuntimeWorldConfig(ServerWorld world) {
+        return getRuntimeWorldConfig(world.getRegistryKey().getValue());
+    }
 }

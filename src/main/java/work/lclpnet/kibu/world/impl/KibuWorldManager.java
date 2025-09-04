@@ -12,8 +12,11 @@ import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.data.LevelDataWriter;
 import work.lclpnet.kibu.world.init.KibuWorldsInit;
+import work.lclpnet.kibu.world.mixin.fantasy.RuntimeWorldPropertiesAccessor;
+import xyz.nucleoid.fantasy.RuntimeWorld;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
+import xyz.nucleoid.fantasy.RuntimeWorldProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,6 +27,7 @@ import java.util.*;
 public class KibuWorldManager implements WorldManager, WorldHandleTracker, LevelDataWriter {
 
     private final Map<ServerWorld, RuntimeWorldHandle> worlds = new HashMap<>();
+    private final Map<Identifier, RuntimeWorld> runtimeWorlds = new HashMap<>();
     private final LevelDataService levelDataService;
     private final WorldPersistenceService worldPersistenceService;
 
@@ -64,9 +68,33 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
+    public Optional<RuntimeWorldConfig> getRuntimeWorldConfig(Identifier identifier) {
+        RuntimeWorld world;
+
+        synchronized (this) {
+            world = runtimeWorlds.get(identifier);
+        }
+
+        if (world == null) {
+            return Optional.empty();
+        }
+
+        if (world.getLevelProperties() instanceof RuntimeWorldProperties rtProps) {
+            return Optional.of(((RuntimeWorldPropertiesAccessor) (Object) rtProps).getConfig());
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
     public void registerWorldHandle(RuntimeWorldHandle handle) {
         synchronized (this) {
-            worlds.put(handle.asWorld(), handle);
+            ServerWorld world = handle.asWorld();
+            worlds.put(world, handle);
+
+            if (world instanceof RuntimeWorld rt) {
+                runtimeWorlds.put(world.getRegistryKey().getValue(), rt);
+            }
         }
     }
 
@@ -74,6 +102,10 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     public void unregisterWorld(ServerWorld world) {
         synchronized (this) {
             worlds.remove(world);
+
+            if (world instanceof RuntimeWorld rt) {
+                runtimeWorlds.remove(world.getRegistryKey().getValue(), rt);
+            }
         }
     }
 
