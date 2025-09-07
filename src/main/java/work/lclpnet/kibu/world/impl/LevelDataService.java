@@ -20,14 +20,16 @@ import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.level.*;
+import net.minecraft.world.level.LevelInfo;
+import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.level.ServerWorldProperties;
+import net.minecraft.world.level.WorldGenSettings;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.data.LevelDataSerializer;
 import work.lclpnet.kibu.world.mixin.LevelPropertiesAccessor;
-import work.lclpnet.kibu.world.mixin.UnmodifiableLevelPropertiesAccessor;
 import xyz.nucleoid.fantasy.RuntimeWorld;
 
 import java.util.Optional;
@@ -71,17 +73,6 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         // now set the actual data of the world
         WorldProperties worldProps = world.getLevelProperties();
 
-        // set data for special subtypes first, as some is overwritten by mixins
-        if (worldProps instanceof LevelProperties lvlProps) {
-            applyLevelProps(lvlProps, props);
-        } else if (worldProps instanceof UnmodifiableLevelProperties immutableProps) {
-            SaveProperties saveProperties = ((UnmodifiableLevelPropertiesAccessor) immutableProps).getSaveProperties();
-
-            if (saveProperties instanceof LevelProperties lvlProps) {
-                applyLevelProps(lvlProps, props);
-            }
-        }
-
         // runtime worlds do not store generator options in the level properties atm
         if (world instanceof RuntimeWorld runtimeWorld) {
             LevelPropertiesAccessor writer = (LevelPropertiesAccessor) props;
@@ -119,21 +110,6 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         }
 
         return props;
-    }
-
-    private void applyLevelProps(LevelProperties source, LevelProperties dest) {
-        dest.setCustomBossEvents(source.getCustomBossEvents());
-        dest.setDragonFight(source.getDragonFight());
-
-        // modify inaccessible fields with mixin accessor
-        LevelPropertiesAccessor reader = (LevelPropertiesAccessor) source;
-        LevelPropertiesAccessor writer = (LevelPropertiesAccessor) dest;
-
-        writer.setLevelInfo(reader.getLevelInfo());
-        writer.setGeneratorOptions(source.getGeneratorOptions());
-        writer.setSpecialProperty(reader.getSpecialProperty());
-        writer.setScheduledEvents(source.getScheduledEvents());
-        writer.setRemovedFeatures(source.getRemovedFeatures());
     }
 
     /**

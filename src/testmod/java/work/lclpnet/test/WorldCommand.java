@@ -28,6 +28,9 @@ import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static net.minecraft.server.command.CommandManager.argument;
+import static net.minecraft.server.command.CommandManager.literal;
+
 public class WorldCommand {
 
     public void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -35,17 +38,47 @@ public class WorldCommand {
     }
 
     private LiteralArgumentBuilder<ServerCommandSource> command() {
-        return CommandManager.literal("kibu:world")
+        return literal("kibu:world")
                 .requires(s -> s.hasPermissionLevel(2))
-                .then(CommandManager.literal("create")
-                        .executes(this::createTmp))
-                .then(CommandManager.literal("load")
+                .then(literal("create")
+                        .then(literal("temporary")
+                                .executes(this::createTmp))
+                        .then(literal("permanent")
+                                .then(argument("id", IdentifierArgumentType.identifier())
+                                        .executes(this::createPermanent))))
+                .then(literal("load")
                         .then(CommandManager.argument("id", IdentifierArgumentType.identifier())
                                 .executes(this::loadWorld)))
-                .then(CommandManager.literal("tp")
+                .then(literal("tp")
                         .then(CommandManager.argument("id", IdentifierArgumentType.identifier())
                                 .suggests(this::worldSuggestions)
                                 .executes(this::tpWorld)));
+    }
+
+    private int createPermanent(CommandContext<ServerCommandSource> ctx) {
+        Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
+
+        MinecraftServer server = ctx.getSource().getServer();
+
+        RuntimeWorldConfig config = new RuntimeWorldConfig()
+                .setDimensionType(DimensionTypes.OVERWORLD)
+                .setDifficulty(Difficulty.NORMAL)
+                .setGenerator(server.getOverworld().getChunkManager().getChunkGenerator())
+                .setSeed(123);
+
+        RuntimeWorldHandle handle;
+
+        try {
+            handle = Fantasy.get(server).getOrOpenPersistentWorld(id, config);
+        } catch (Throwable t) {
+            KibuWorldsInit.LOGGER.error("Failed to open persistent world", t);
+            ctx.getSource().sendError(Text.literal("Failed to open permanent world. More details in the console"));
+            return 0;
+        }
+
+        ctx.getSource().sendMessage(Text.literal("Opened permanent world " + handle.getRegistryKey().getValue()));
+
+        return 1;
     }
 
     private int createTmp(CommandContext<ServerCommandSource> ctx) {
