@@ -7,10 +7,12 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "GameRule$RuleMixin",
     "GameRuleCommandMixin",
     "GameRulesMixin",
     "LevelPropertiesAccessor",
     "MinecraftServerAccessor",
+    "ServerWorldAccessor",
     "UnmodifiableLevelPropertiesAccessor",
     "WeatherCommandMixin"
   ]

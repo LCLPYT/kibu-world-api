@@ -125,6 +125,8 @@ public class WorldPersistenceService {
             }
         });
 
+        config.setShouldTickTime(config.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE));
+
         return config;
     }
 
