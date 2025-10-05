@@ -27,7 +27,7 @@ public class WeatherCommandMixin {
         if (entity == null) return instance;
 
         // set weather of the source entity dimension, if it has weather
-        if (entity.getWorld() instanceof ServerWorld world && world.getDimension().hasSkyLight()) {
+        if (entity.getEntityWorld() instanceof ServerWorld world && world.getDimension().hasSkyLight()) {
             return world;
         }
 

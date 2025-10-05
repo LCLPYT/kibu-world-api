@@ -89,7 +89,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
         // vanilla encapsulation
         props.setDifficulty(worldProps.getDifficulty());
-        props.setSpawnPos(worldProps.getSpawnPos(), worldProps.getSpawnAngle());
+        props.setSpawnPoint(worldProps.getSpawnPoint());
         props.setTime(worldProps.getTime());
         props.setTimeOfDay(worldProps.getTimeOfDay());
         props.setDifficultyLocked(worldProps.isDifficultyLocked());

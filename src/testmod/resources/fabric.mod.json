@@ -18,11 +18,7 @@
   },
   "mixins": [],
   "depends": {
-    "fabricloader": ">=0.15.11",
-    "minecraft": "~1.21",
-    "java": ">=21",
-    "fabric-api": "*",
-    "fantasy": ">=${fantasy_version}"
+    "kibu-world-api": "*"
   },
   "suggests": {},
   "custom": {

@@ -43,7 +43,7 @@ public class GameRuleCommandMixin {
     private static GameRules kibu$changeReceiver(GameRules original, ServerCommandSource source) {
         Entity entity = source.getEntity();
 
-        if (entity == null || !(entity.getWorld() instanceof RuntimeWorld rt)) {
+        if (entity == null || !(entity.getEntityWorld() instanceof RuntimeWorld rt)) {
             return original;
         }
 
