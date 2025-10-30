@@ -4,6 +4,14 @@ Allows for world re-creation from the persisted level.dat file.
 Also serves as runtime world manager, which holds handles to all created runtime worlds. 
 This mod is part of the [kibu](https://github.com/LCLPYT/kibu) modding library, but packaged in a separate mod to avoid third-party mod dependencies in the base project.
 
+## Features
+- load and restore worlds from level.dat file
+- provides a runtime world manager API, that keeps track of runtime world handles
+- creates level.dat if needed when saving runtime worlds
+- per-world game rules (patches the /gamerule command)
+- per-world time (patches the /time command)
+- per-world weather (patches the /weather command)
+
 ## Gradle Dependency
 You can install kibu-world-api via Gradle.
 
@@ -18,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation 'work.lclpnet.mods.kibu:kibu-world-api:0.6.1+1.20.6'  // replace with your version
+    modImplementation 'work.lclpnet.mods.kibu:kibu-world-api:0.9.2+1.20.10'  // replace with your version
 }
 ```
 All available versions can be found [here](https://repo.lclpnet.work/#artifact/work.lclpnet.mods.kibu/kibu-world-api).
