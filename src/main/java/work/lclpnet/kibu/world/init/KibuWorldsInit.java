@@ -36,6 +36,14 @@ public class KibuWorldsInit implements ModInitializer {
             }
         });
 
+        // needs to be removed if merged into upstream (https://github.com/NucleoidMC/fantasy/pull/72)
+        ServerWorldEvents.LOAD.register((server, world) -> {
+            if (!(world instanceof RuntimeWorld runtimeWorld)) return;
+
+            // setup world border for the runtime world (method is named poorly in yarn mappings)
+            runtimeWorld.getServer().getPlayerManager().setMainWorld(runtimeWorld);
+        });
+
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (!(world instanceof RuntimeWorld runtimeWorld)) return;
 
