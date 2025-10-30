@@ -13,6 +13,7 @@
     "LevelPropertiesAccessor",
     "MinecraftServerAccessor",
     "ServerWorldAccessor",
+    "TimeCommandMixin",
     "UnmodifiableLevelPropertiesAccessor",
     "WeatherCommandMixin"
   ]
