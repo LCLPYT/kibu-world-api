@@ -1,22 +1,22 @@
 package work.lclpnet.kibu.world.impl;
 
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtSizeTracker;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionOptionsRegistryHolder;
-import net.minecraft.world.gen.GeneratorOptions;
-import net.minecraft.world.level.LevelProperties;
-import net.minecraft.world.level.storage.LevelStorage;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.WorldDimensions;
+import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,11 +47,11 @@ public class WorldPersistenceService {
         this.logger = logger;
     }
 
-    public Optional<RuntimeWorldHandle> tryRecreateWorld(Identifier identifier) {
-        RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, identifier);
+    public Optional<RuntimeWorldHandle> tryRecreateWorld(ResourceLocation identifier) {
+        ResourceKey<Level> registryKey = ResourceKey.create(Registries.DIMENSION, identifier);
 
         Fantasy fantasy = Fantasy.get(server);
-        ServerWorld world = server.getWorld(registryKey);
+        ServerLevel world = server.getLevel(registryKey);
 
         if (world != null) {
             // world exists, it is safe to call getOrOpenPersistentWorld()
@@ -80,7 +80,7 @@ public class WorldPersistenceService {
     }
 
     @Nullable
-    public RuntimeWorldConfig restoreConfig(RegistryKey<World> registryKey) {
+    public RuntimeWorldConfig restoreConfig(ResourceKey<Level> registryKey) {
         // try to read levelData
         LevelDataDeserializer.Result levelData = readLevelData(registryKey);
 
@@ -88,10 +88,10 @@ public class WorldPersistenceService {
             return null;
         }
 
-        LevelProperties properties = levelData.properties();
-        DimensionOptionsRegistryHolder.DimensionsConfig dimensionsConfig = levelData.dimensions();
+        PrimaryLevelData properties = levelData.properties();
+        WorldDimensions.Complete dimensionsConfig = levelData.dimensions();
 
-        DimensionOptions dimension = findMainDimension(dimensionsConfig);
+        LevelStem dimension = findMainDimension(dimensionsConfig);
 
         if (dimension == null) {
             logger.error("Could not find main dimension for level {}", properties.getLevelName());
@@ -99,48 +99,48 @@ public class WorldPersistenceService {
         }
 
         RuntimeWorldConfig config = new RuntimeWorldConfig()
-                .setDimensionType(dimension.dimensionTypeEntry())
-                .setGenerator(dimension.chunkGenerator())
+                .setDimensionType(dimension.type())
+                .setGenerator(dimension.generator())
                 .setFlat(properties.isFlatWorld())
                 .setDifficulty(properties.getDifficulty());
 
-        GeneratorOptions generatorOptions = properties.getGeneratorOptions();
-        config.setSeed(generatorOptions.getSeed());
+        WorldOptions generatorOptions = properties.worldGenOptions();
+        config.setSeed(generatorOptions.seed());
 
         config.setSunny(properties.getClearWeatherTime());
         config.setRaining(properties.getRainTime());
         config.setRaining(properties.isRaining());
         config.setThundering(properties.isThundering());
         config.setThundering(properties.getThunderTime());
-        config.setTimeOfDay(properties.getTimeOfDay());
+        config.setTimeOfDay(properties.getDayTime());
 
         GameRules gameRules = properties.getGameRules();
-        Map<GameRules.Key<?>, GameRules.Rule<?>> ruleMap = ((GameRuleAccess) gameRules).kibu$getRules();
+        Map<GameRules.Key<?>, GameRules.Value<?>> ruleMap = ((GameRuleAccess) gameRules).kibu$getRules();
 
         ruleMap.forEach((key, rule) -> {
-            if (rule instanceof GameRules.BooleanRule booleanRule) {
+            if (rule instanceof GameRules.BooleanValue booleanRule) {
                 config.setGameRule(cast(key), booleanRule.get());
-            } else if (rule instanceof GameRules.IntRule intRule) {
+            } else if (rule instanceof GameRules.IntegerValue intRule) {
                 config.setGameRule(cast(key), intRule.get());
             }
         });
 
-        config.setShouldTickTime(config.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE));
+        config.setShouldTickTime(config.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT));
 
         return config;
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends GameRules.Rule<T>> GameRules.Key<T> cast(GameRules.Key<?> key) {
+    private static <T extends GameRules.Value<T>> GameRules.Key<T> cast(GameRules.Key<?> key) {
         return (GameRules.Key<T>) key;
     }
 
     @Nullable
-    private DimensionOptions findMainDimension(DimensionOptionsRegistryHolder.DimensionsConfig config) {
-        Registry<DimensionOptions> dimensions = config.dimensions();
+    private LevelStem findMainDimension(WorldDimensions.Complete config) {
+        Registry<LevelStem> dimensions = config.dimensions();
 
-        if (dimensions.contains(DimensionOptions.OVERWORLD)) {
-            DimensionOptions overworld = dimensions.get(DimensionOptions.OVERWORLD);
+        if (dimensions.containsKey(LevelStem.OVERWORLD)) {
+            LevelStem overworld = dimensions.getValue(LevelStem.OVERWORLD);
 
             if (overworld != null) {
                 return overworld;
@@ -158,19 +158,19 @@ public class WorldPersistenceService {
     }
 
     @Nullable
-    private LevelDataDeserializer.Result readLevelData(RegistryKey<World> registryKey) {
+    private LevelDataDeserializer.Result readLevelData(ResourceKey<Level> registryKey) {
         Path directory = getWorldDirectory(registryKey);
-        Path levelDat = directory.resolve(WorldSavePath.LEVEL_DAT.getRelativePath());
+        Path levelDat = directory.resolve(LevelResource.LEVEL_DATA_FILE.getId());
 
         if (!Files.exists(levelDat)) {
             logger.warn("Level data file does not exist at {}", levelDat);
             return null;
         }
 
-        NbtCompound nbt;
+        CompoundTag nbt;
 
         try (var in = Files.newInputStream(levelDat)) {
-            nbt = NbtIo.readCompressed(in, NbtSizeTracker.ofUnlimitedBytes());
+            nbt = NbtIo.readCompressed(in, NbtAccounter.unlimitedHeap());
         } catch (IOException e) {
             logger.error("Failed to read compressed nbt from {}", levelDat, e);
             return null;
@@ -180,9 +180,9 @@ public class WorldPersistenceService {
     }
 
     @NotNull
-    private Path getWorldDirectory(RegistryKey<World> registryKey) {
-        LevelStorage.Session session = ((MinecraftServerAccessor) server).getSession();
+    private Path getWorldDirectory(ResourceKey<Level> registryKey) {
+        LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
 
-        return session.getWorldDirectory(registryKey);
+        return session.getDimensionPath(registryKey);
     }
 }

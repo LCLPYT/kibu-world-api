@@ -1,12 +1,12 @@
 package work.lclpnet.kibu.world.impl;
 
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus;
 import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
@@ -26,8 +26,8 @@ import java.util.*;
 @ApiStatus.Internal
 public class KibuWorldManager implements WorldManager, WorldHandleTracker, LevelDataWriter {
 
-    private final Map<ServerWorld, RuntimeWorldHandle> worlds = new HashMap<>();
-    private final Map<Identifier, RuntimeWorld> runtimeWorlds = new HashMap<>();
+    private final Map<ServerLevel, RuntimeWorldHandle> worlds = new HashMap<>();
+    private final Map<ResourceLocation, RuntimeWorld> runtimeWorlds = new HashMap<>();
     private final LevelDataService levelDataService;
     private final WorldPersistenceService worldPersistenceService;
 
@@ -43,7 +43,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeWorldHandle> getRuntimeWorldHandle(ServerWorld world) {
+    public Optional<RuntimeWorldHandle> getRuntimeWorldHandle(ServerLevel world) {
         RuntimeWorldHandle handle;
 
         synchronized (this) {
@@ -54,13 +54,13 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeWorldHandle> openPersistentWorld(Identifier identifier) {
+    public Optional<RuntimeWorldHandle> openPersistentWorld(ResourceLocation identifier) {
         return worldPersistenceService.tryRecreateWorld(identifier);
     }
 
     @Override
-    public Optional<RuntimeWorldConfig> getWorldConfig(Identifier identifier) {
-        var registryKey = RegistryKey.of(RegistryKeys.WORLD, identifier);
+    public Optional<RuntimeWorldConfig> getWorldConfig(ResourceLocation identifier) {
+        var registryKey = ResourceKey.create(Registries.DIMENSION, identifier);
 
         RuntimeWorldConfig config = worldPersistenceService.restoreConfig(registryKey);
 
@@ -68,7 +68,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeWorldConfig> getRuntimeWorldConfig(Identifier identifier) {
+    public Optional<RuntimeWorldConfig> getRuntimeWorldConfig(ResourceLocation identifier) {
         RuntimeWorld world;
 
         synchronized (this) {
@@ -79,7 +79,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
             return Optional.empty();
         }
 
-        if (world.getLevelProperties() instanceof RuntimeWorldProperties rtProps) {
+        if (world.getLevelData() instanceof RuntimeWorldProperties rtProps) {
             return Optional.of(((RuntimeWorldPropertiesAccessor) (Object) rtProps).getConfig());
         }
 
@@ -89,30 +89,30 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     @Override
     public void registerWorldHandle(RuntimeWorldHandle handle) {
         synchronized (this) {
-            ServerWorld world = handle.asWorld();
+            ServerLevel world = handle.asWorld();
             worlds.put(world, handle);
 
             if (world instanceof RuntimeWorld rt) {
-                runtimeWorlds.put(world.getRegistryKey().getValue(), rt);
+                runtimeWorlds.put(world.dimension().location(), rt);
             }
         }
     }
 
     @Override
-    public void unregisterWorld(ServerWorld world) {
+    public void unregisterWorld(ServerLevel world) {
         synchronized (this) {
             worlds.remove(world);
 
             if (world instanceof RuntimeWorld rt) {
-                runtimeWorlds.remove(world.getRegistryKey().getValue(), rt);
+                runtimeWorlds.remove(world.dimension().location(), rt);
             }
         }
     }
 
     @Override
-    public void writeLevelData(ServerWorld world, Path path) {
+    public void writeLevelData(ServerLevel world, Path path) {
         try {
-            NbtCompound nbt = levelDataService.serializeLevelData(world);
+            CompoundTag nbt = levelDataService.serializeLevelData(world);
 
             try (var out = Files.newOutputStream(path)) {
                 NbtIo.writeCompressed(nbt, out);

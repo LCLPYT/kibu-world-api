@@ -10,11 +10,11 @@
     "GameRule$RuleMixin",
     "GameRuleCommandMixin",
     "GameRulesMixin",
-    "LevelPropertiesAccessor",
+    "PrimaryLevelDataAccessor",
     "MinecraftServerAccessor",
-    "ServerWorldAccessor",
+    "ServerLevelAccessor",
     "TimeCommandMixin",
-    "UnmodifiableLevelPropertiesAccessor",
+    "DerivedLevelDataAccessor",
     "WeatherCommandMixin"
   ]
 }

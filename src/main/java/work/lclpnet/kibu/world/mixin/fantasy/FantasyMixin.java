@@ -1,7 +1,7 @@
 package work.lclpnet.kibu.world.mixin.fantasy;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,10 +21,10 @@ public class FantasyMixin {
     @Shadow(remap = false) @Final private MinecraftServer server;
 
     @Inject(
-            method = "openTemporaryWorld(Lnet/minecraft/util/Identifier;Lxyz/nucleoid/fantasy/RuntimeWorldConfig;)Lxyz/nucleoid/fantasy/RuntimeWorldHandle;",
+            method = "openTemporaryWorld(Lnet/minecraft/resources/ResourceLocation;Lxyz/nucleoid/fantasy/RuntimeWorldConfig;)Lxyz/nucleoid/fantasy/RuntimeWorldHandle;",
             at = @At("RETURN")
     )
-    public void kibu$openTemporaryWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
+    public void kibu$openTemporaryWorld(ResourceLocation key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
         RuntimeWorldHandle handle = cir.getReturnValue();
         WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
 
@@ -37,7 +37,7 @@ public class FantasyMixin {
             method = "getOrOpenPersistentWorld",
             at = @At("RETURN")
     )
-    public void kibu$getOrOpenPersistentWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
+    public void kibu$getOrOpenPersistentWorld(ResourceLocation key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
         RuntimeWorldHandle handle = cir.getReturnValue();
         WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
 

@@ -1,25 +1,25 @@
 package work.lclpnet.kibu.world.data;
 
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.world.World;
-import net.minecraft.world.level.storage.LevelStorage;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 
 import java.nio.file.Path;
 
 public interface LevelDataWriter {
 
-    void writeLevelData(ServerWorld world, Path path);
+    void writeLevelData(ServerLevel world, Path path);
 
-    default void writeLevelData(ServerWorld world) {
+    default void writeLevelData(ServerLevel world) {
         MinecraftServer server = world.getServer();
-        LevelStorage.Session session = ((MinecraftServerAccessor) server).getSession();
-        RegistryKey<World> registryKey = world.getRegistryKey();
+        LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
+        ResourceKey<Level> registryKey = world.dimension();
 
-        Path levelDat = session.getWorldDirectory(registryKey).resolve(WorldSavePath.LEVEL_DAT.getRelativePath());
+        Path levelDat = session.getDimensionPath(registryKey).resolve(LevelResource.LEVEL_DATA_FILE.getId());
 
         writeLevelData(world, levelDat);
     }
