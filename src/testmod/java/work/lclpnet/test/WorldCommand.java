@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
@@ -15,7 +15,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import work.lclpnet.kibu.world.KibuWorlds;
@@ -39,24 +39,24 @@ public class WorldCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> command() {
         return literal("kibu:world")
-                .requires(s -> s.hasPermission(2))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(literal("create")
                         .then(literal("temporary")
                                 .executes(this::createTmp))
                         .then(literal("permanent")
-                                .then(argument("id", ResourceLocationArgument.id())
+                                .then(argument("id", IdentifierArgument.id())
                                         .executes(this::createPermanent))))
                 .then(literal("load")
-                        .then(Commands.argument("id", ResourceLocationArgument.id())
+                        .then(Commands.argument("id", IdentifierArgument.id())
                                 .executes(this::loadWorld)))
                 .then(literal("tp")
-                        .then(Commands.argument("id", ResourceLocationArgument.id())
+                        .then(Commands.argument("id", IdentifierArgument.id())
                                 .suggests(this::worldSuggestions)
                                 .executes(this::tpWorld)));
     }
 
     private int createPermanent(CommandContext<CommandSourceStack> ctx) {
-        ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+        Identifier id = IdentifierArgument.getId(ctx, "id");
 
         MinecraftServer server = ctx.getSource().getServer();
 
@@ -76,7 +76,7 @@ public class WorldCommand {
             return 0;
         }
 
-        ctx.getSource().sendSystemMessage(Component.literal("Opened permanent world " + handle.getRegistryKey().location()));
+        ctx.getSource().sendSystemMessage(Component.literal("Opened permanent world " + handle.getRegistryKey().identifier()));
 
         return 1;
     }
@@ -100,13 +100,13 @@ public class WorldCommand {
             return 0;
         }
 
-        ctx.getSource().sendSystemMessage(Component.literal("Created temporary world " + handle.getRegistryKey().location()));
+        ctx.getSource().sendSystemMessage(Component.literal("Created temporary world " + handle.getRegistryKey().identifier()));
 
         return 1;
     }
 
     private int loadWorld(CommandContext<CommandSourceStack> ctx) {
-        ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+        Identifier id = IdentifierArgument.getId(ctx, "id");
 
         CommandSourceStack source = ctx.getSource();
         MinecraftServer server = source.getServer();
@@ -124,7 +124,7 @@ public class WorldCommand {
     }
 
     private int tpWorld(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+        Identifier id = IdentifierArgument.getId(ctx, "id");
 
         CommandSourceStack source = ctx.getSource();
         MinecraftServer server = source.getServer();
@@ -146,13 +146,12 @@ public class WorldCommand {
 
     private CompletableFuture<Suggestions> worldSuggestions(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         MinecraftServer server = ctx.getSource().getServer();
-        if (server == null) return builder.buildFuture();
 
         for (var key : server.levelKeys()) {
             ServerLevel world = server.getLevel(key);
             if (world == null) continue;
 
-            builder.suggest(key.location().toString());
+            builder.suggest(key.identifier().toString());
         }
 
         return builder.buildFuture();

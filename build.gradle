@@ -60,9 +60,14 @@ dependencies {
 [processResources, processTestmodResources].each {
 	it.inputs.property "version", project.version
     it.inputs.property "fantasy_version", project.fantasy_version
+    it.inputs.property "loader_version", project.loader_version
+    it.inputs.property "minecraft_compat", project.minecraft_compat
 
 	it.filesMatching("fabric.mod.json") {
-		expand "version": project.version, "fantasy_version": project.fantasy_version
+		expand "version": project.version,
+                "fantasy_version": project.fantasy_version,
+                "loader_version": project.loader_version,
+                "minecraft_compat": project.minecraft_compat
 	}
 }
 

@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
@@ -27,7 +27,7 @@ import java.util.*;
 public class KibuWorldManager implements WorldManager, WorldHandleTracker, LevelDataWriter {
 
     private final Map<ServerLevel, RuntimeWorldHandle> worlds = new HashMap<>();
-    private final Map<ResourceLocation, RuntimeWorld> runtimeWorlds = new HashMap<>();
+    private final Map<Identifier, RuntimeWorld> runtimeWorlds = new HashMap<>();
     private final LevelDataService levelDataService;
     private final WorldPersistenceService worldPersistenceService;
 
@@ -54,12 +54,12 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeWorldHandle> openPersistentWorld(ResourceLocation identifier) {
+    public Optional<RuntimeWorldHandle> openPersistentWorld(Identifier identifier) {
         return worldPersistenceService.tryRecreateWorld(identifier);
     }
 
     @Override
-    public Optional<RuntimeWorldConfig> getWorldConfig(ResourceLocation identifier) {
+    public Optional<RuntimeWorldConfig> getWorldConfig(Identifier identifier) {
         var registryKey = ResourceKey.create(Registries.DIMENSION, identifier);
 
         RuntimeWorldConfig config = worldPersistenceService.restoreConfig(registryKey);
@@ -68,7 +68,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeWorldConfig> getRuntimeWorldConfig(ResourceLocation identifier) {
+    public Optional<RuntimeWorldConfig> getRuntimeWorldConfig(Identifier identifier) {
         RuntimeWorld world;
 
         synchronized (this) {
@@ -93,7 +93,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
             worlds.put(world, handle);
 
             if (world instanceof RuntimeWorld rt) {
-                runtimeWorlds.put(world.dimension().location(), rt);
+                runtimeWorlds.put(world.dimension().identifier(), rt);
             }
         }
     }
@@ -104,7 +104,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
             worlds.remove(world);
 
             if (world instanceof RuntimeWorld rt) {
-                runtimeWorlds.remove(world.dimension().location(), rt);
+                runtimeWorlds.remove(world.dimension().identifier(), rt);
             }
         }
     }

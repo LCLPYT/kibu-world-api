@@ -27,6 +27,7 @@ import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.data.LevelDataSerializer;
@@ -98,7 +99,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         props.setThundering(worldProps.isThundering());
 
         if (worldProps instanceof ServerLevelData swProps) {
-            props.getGameRules().assignFrom(swProps.getGameRules(), null);
+            props.getGameRules().setAll(swProps.getGameRules(), null);
             props.setClearWeatherTime(swProps.getClearWeatherTime());
             props.setRainTime(swProps.getRainTime());
             props.setThunderTime(swProps.getThunderTime());
@@ -151,7 +152,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         return new RegistryAccess() {
             @SuppressWarnings("unchecked")
             @Override
-            public <E> Optional<Registry<E>> lookup(ResourceKey<? extends Registry<? extends E>> key) {
+            public <E> @NonNull Optional<Registry<E>> lookup(@NonNull ResourceKey<? extends Registry<? extends E>> key) {
                 if (Registries.LEVEL_STEM.equals(key)) {
                     return Optional.of((Registry<E>) registry);
                 }
@@ -160,7 +161,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
             }
 
             @Override
-            public Stream<RegistryEntry<?>> registries() {
+            public @NonNull Stream<RegistryEntry<?>> registries() {
                 return Stream.concat(
                         Stream.of(new RegistryEntry<>(Registries.LEVEL_STEM, registry)),
                         parent.registries().filter(entry -> !Registries.LEVEL_STEM.equals(entry.key()))

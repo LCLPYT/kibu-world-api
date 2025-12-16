@@ -7,14 +7,12 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "GameRule$RuleMixin",
     "GameRuleCommandMixin",
-    "GameRulesMixin",
-    "PrimaryLevelDataAccessor",
     "MinecraftServerAccessor",
+    "MinecraftServerMixin",
+    "PrimaryLevelDataAccessor",
     "ServerLevelAccessor",
     "TimeCommandMixin",
-    "DerivedLevelDataAccessor",
     "WeatherCommandMixin"
   ]
 }
