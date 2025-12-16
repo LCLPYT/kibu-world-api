@@ -82,7 +82,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-[jar, remapJar, sourcesJar].each {
+[jar, sourcesJar].each {
 	it.from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
