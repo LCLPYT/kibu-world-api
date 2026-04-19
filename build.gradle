@@ -1,18 +1,22 @@
+import org.apache.tools.ant.filters.ReplaceTokens
 import work.lclpnet.build.task.GithubDeploymentTask
 
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
-	id 'maven-publish'
-	id 'gradle-build-utils' version '1.7.0'
+    alias(libs.plugins.fabric.loom)
+    alias(libs.plugins.maven.publish)
+    alias(libs.plugins.gradle.build.utils)
 }
 
 Properties props = buildUtils.loadProperties('publish.properties')
 
 group = project.maven_group
-version = "${project.mod_version}+${project.minecraft_version}"
+version = "${project.mod_version}+${libs.versions.minecraft.get()}"
+
+def modId = project.mod_id
+def javaVersion = libs.versions.java.get().toInteger()
 
 base {
-    archivesName = project.archives_base_name
+    archivesName = modId
 }
 
 repositories {
@@ -49,37 +53,41 @@ loom {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modImplementation "xyz.nucleoid:fantasy:${project.fantasy_version}"
+    minecraft(libs.minecraft)
+    implementation(libs.fabric.loader)
+    implementation(libs.fabric.api)
+    implementation(libs.fantasy)
 }
 
 [processResources, processTestmodResources].each {
-	it.inputs.property "version", project.version
-    it.inputs.property "fantasy_version", project.fantasy_version
-    it.inputs.property "loader_version", project.loader_version
-    it.inputs.property "minecraft_compat", project.minecraft_compat
+    def tokens = [
+            "version": project.version.toString(),
+            "fantasy_version": libs.versions.fantasy.get(),
+            "loader_version": libs.versions.fabric.loader.get(),
+            "minecraft_compat": project.minecraft_compat,
+            "java_version": javaVersion.toString()
+    ]
+
+    it.inputs.properties(tokens)
 
 	it.filesMatching("fabric.mod.json") {
-		expand "version": project.version,
-                "fantasy_version": project.fantasy_version,
-                "loader_version": project.loader_version,
-                "minecraft_compat": project.minecraft_compat
+        expand(tokens)
 	}
+
+    it.filesMatching("*.mixins.json") {
+        filter(ReplaceTokens, beginToken: '${', endToken: '}', tokens: tokens)
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release.set(21)
+	it.options.release.set(javaVersion)
 }
 
 java {
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.toVersion(javaVersion)
+    targetCompatibility = JavaVersion.toVersion(javaVersion)
 }
 
 [jar, sourcesJar].each {
@@ -91,7 +99,7 @@ java {
 def env = System.getenv()
 
 tasks.register("github", GithubDeploymentTask) {
-    dependsOn tasks.remapJar
+    dependsOn tasks.jar
 
     config {
         token = env.get("GITHUB_TOKEN")
@@ -99,11 +107,11 @@ tasks.register("github", GithubDeploymentTask) {
     }
 
     release {
-        title = "[$project.minecraft_version] $project.name $project.version"
+        title = "[${libs.versions.minecraft.get()}] $project.name $project.version"
         tag = project.version
     }
 
-    assets.add(tasks.remapJar.archiveFile.get())
+    assets.add(tasks.jar.archiveFile.get())
 }
 
 // configure the maven publication

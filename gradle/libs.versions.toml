@@ -1,0 +1,19 @@
+[versions]
+minecraft = "26.1.2"
+fabric-api = "0.144.3+26.1"
+fabric-loader = "0.19.1"
+fabric-loom = "1.15-SNAPSHOT"
+gradle-build-tools = "1.7.0"
+java = "25"
+fantasy = "0.8.0-beta.1+26.1.1"
+
+[plugins]
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }
+maven-publish = { id = "maven-publish" }
+gradle-build-utils = { id = "gradle-build-utils", version.ref = "gradle-build-tools" }
+
+[libraries]
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fantasy = { module = "xyz.nucleoid:fantasy", version.ref = "fantasy" }

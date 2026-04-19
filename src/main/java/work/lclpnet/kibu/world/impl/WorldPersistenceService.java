@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 import xyz.nucleoid.fantasy.Fantasy;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-import xyz.nucleoid.fantasy.RuntimeWorldHandle;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,20 +46,20 @@ public class WorldPersistenceService {
         this.logger = logger;
     }
 
-    public Optional<RuntimeWorldHandle> tryRecreateWorld(Identifier identifier) {
+    public Optional<RuntimeLevelHandle> tryRecreateWorld(Identifier identifier) {
         ResourceKey<Level> registryKey = ResourceKey.create(Registries.DIMENSION, identifier);
 
         Fantasy fantasy = Fantasy.get(server);
         ServerLevel world = server.getLevel(registryKey);
 
         if (world != null) {
-            // world exists, it is safe to call getOrOpenPersistentWorld()
-            RuntimeWorldHandle handle = fantasy.getOrOpenPersistentWorld(identifier, null);
+            // world exists, it is safe to call getOrOpenPersistentLevel()
+            RuntimeLevelHandle handle = fantasy.getOrOpenPersistentLevel(identifier, null);
             return Optional.of(handle);
         }
 
         // try to restore config
-        RuntimeWorldConfig config;
+        RuntimeLevelConfig config;
 
         try {
             config = restoreConfig(registryKey);
@@ -73,13 +73,13 @@ public class WorldPersistenceService {
         }
 
         // config restored successfully
-        RuntimeWorldHandle handle = fantasy.getOrOpenPersistentWorld(identifier, config);
+        RuntimeLevelHandle handle = fantasy.getOrOpenPersistentLevel(identifier, config);
 
         return Optional.of(handle);
     }
 
     @Nullable
-    public RuntimeWorldConfig restoreConfig(ResourceKey<Level> registryKey) {
+    public RuntimeLevelConfig restoreConfig(ResourceKey<Level> registryKey) {
         // try to read levelData
         LevelDataDeserializer.Result levelData = readLevelData(registryKey);
 
@@ -97,28 +97,28 @@ public class WorldPersistenceService {
             return null;
         }
 
-        RuntimeWorldConfig config = new RuntimeWorldConfig()
+        RuntimeLevelConfig config = new RuntimeLevelConfig()
                 .setDimensionType(dimension.type())
                 .setGenerator(dimension.generator())
                 .setFlat(properties.isFlatWorld())
                 .setDifficulty(properties.getDifficulty());
 
-        WorldOptions generatorOptions = properties.worldGenOptions();
-        config.setSeed(generatorOptions.seed());
+//        WorldOptions generatorOptions = properties.worldGenOptions(); // TODO
+//        config.setSeed(generatorOptions.seed());
 
-        config.setSunny(properties.getClearWeatherTime());
-        config.setRaining(properties.getRainTime());
-        config.setRaining(properties.isRaining());
-        config.setThundering(properties.isThundering());
-        config.setThundering(properties.getThunderTime());
-        config.setTimeOfDay(properties.getDayTime());
+//        config.setSunny(properties.getClearWeatherTime());
+//        config.setRaining(properties.getRainTime());
+//        config.setRaining(properties.isRaining());
+//        config.setThundering(properties.isThundering());
+//        config.setThundering(properties.getThunderTime());
+//        config.setTimeOfDay(properties.getDayTime());
 
-        GameRules gameRules = properties.getGameRules();
-        gameRules.availableRules().forEach(rule -> {
-            var value = gameRules.get(rule);
-
-            assign(config, rule, value);
-        });
+//        GameRules gameRules = properties.getGameRules();
+//        gameRules.availableRules().forEach(rule -> {
+//            var value = gameRules.get(rule);
+//
+//            assign(config, rule, value);
+//        });
 
         config.setShouldTickTime(config.getGameRules().get(GameRules.ADVANCE_TIME));
 
@@ -126,7 +126,7 @@ public class WorldPersistenceService {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void assign(RuntimeWorldConfig config, GameRule<T> rule, Object value) {
+    private <T> void assign(RuntimeLevelConfig config, GameRule<T> rule, Object value) {
         config.setGameRule(rule, (T) value);
     }
 
@@ -155,7 +155,7 @@ public class WorldPersistenceService {
     @Nullable
     private LevelDataDeserializer.Result readLevelData(ResourceKey<Level> registryKey) {
         Path directory = getWorldDirectory(registryKey);
-        Path levelDat = directory.resolve(LevelResource.LEVEL_DATA_FILE.getId());
+        Path levelDat = directory.resolve(LevelResource.LEVEL_DATA_FILE.id());
 
         if (!Files.exists(levelDat)) {
             logger.warn("Level data file does not exist at {}", levelDat);

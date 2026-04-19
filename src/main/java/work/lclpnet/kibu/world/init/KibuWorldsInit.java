@@ -1,20 +1,20 @@
 package work.lclpnet.kibu.world.init;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import work.lclpnet.kibu.world.KibuWorlds;
+import work.lclpnet.kibu.world.KibuLevels;
 import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.data.LevelDataWriter;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
-import work.lclpnet.kibu.world.mixin.fantasy.RuntimeWorldAccessor;
-import xyz.nucleoid.fantasy.RuntimeWorld;
-import xyz.nucleoid.fantasy.RuntimeWorldHandle;
+import work.lclpnet.kibu.world.mixin.fantasy.RuntimeLevelAccessor;
+import xyz.nucleoid.fantasy.RuntimeLevel;
+import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,51 +26,51 @@ public class KibuWorldsInit implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        ServerWorldEvents.UNLOAD.register((server, world) -> {
-            if (!(world instanceof RuntimeWorld runtimeWorld)) return;
+        ServerLevelEvents.UNLOAD.register((server, world) -> {
+            if (!(world instanceof RuntimeLevel RuntimeLevel)) return;
 
-            WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+            WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
             if (worldManager instanceof WorldHandleTracker tracker) {
-                tracker.unregisterWorld(runtimeWorld);
+                tracker.unregisterWorld(RuntimeLevel);
             }
         });
 
         // needs to be removed if merged into upstream (https://github.com/NucleoidMC/fantasy/pull/72)
-        ServerWorldEvents.LOAD.register((server, world) -> {
-            if (!(world instanceof RuntimeWorld runtimeWorld)) return;
+        ServerLevelEvents.LOAD.register((_, world) -> {
+            if (!(world instanceof RuntimeLevel runtimeLevel)) return;
 
             // setup world border for the runtime world (method is named poorly in yarn mappings)
-            runtimeWorld.getServer().getPlayerList().addWorldborderListener(runtimeWorld);
+            runtimeLevel.getServer().getPlayerList().addWorldborderListener(runtimeLevel);
         });
 
-        ServerWorldEvents.LOAD.register((server, world) -> {
-            if (!(world instanceof RuntimeWorld runtimeWorld)) return;
+        ServerLevelEvents.LOAD.register((server, world) -> {
+            if (!(world instanceof RuntimeLevel runtimeLevel)) return;
 
-            RuntimeWorld.Style style = ((RuntimeWorldAccessor) runtimeWorld).getStyle();
+            RuntimeLevel.Style style = ((RuntimeLevelAccessor) runtimeLevel).getStyle();
 
-            if (style != RuntimeWorld.Style.PERSISTENT) return;
+            if (style != RuntimeLevel.Style.PERSISTENT) return;
 
             var key = world.dimension();
 
             LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
-            Path levelDat = session.getDimensionPath(key).resolve(LevelResource.LEVEL_DATA_FILE.getId());
+            Path levelDat = session.getDimensionPath(key).resolve(LevelResource.LEVEL_DATA_FILE.id());
 
             if (Files.exists(levelDat)) return;
 
-            WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+            WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
             if (worldManager instanceof LevelDataWriter writer) {
                 writer.writeLevelData(world);
             }
         });
 
-        ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> {
-            WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+        ServerLifecycleEvents.AFTER_SAVE.register((server, _, _) -> {
+            WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
             if (worldManager instanceof LevelDataWriter writer) {
-                for (RuntimeWorldHandle handle : worldManager.getRuntimeWorldHandles()) {
-                    writer.writeLevelData(handle.asWorld());
+                for (RuntimeLevelHandle handle : worldManager.getRuntimeLevelHandles()) {
+                    writer.writeLevelData(handle.asLevel());
                 }
             }
         });

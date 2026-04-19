@@ -2,13 +2,12 @@
   "required": false,
   "minVersion": "0.8",
   "package": "work.lclpnet.kibu.world.mixin.fantasy",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_${java_version}",
   "injectors": {
     "defaultRequire": 1
   },
   "mixins": [
     "FantasyMixin",
-    "RuntimeWorldAccessor",
-    "RuntimeWorldPropertiesAccessor"
+    "RuntimeLevelAccessor"
   ]
 }

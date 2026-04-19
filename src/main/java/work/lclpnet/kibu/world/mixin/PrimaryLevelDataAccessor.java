@@ -9,7 +9,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(PrimaryLevelData.class)
 public interface PrimaryLevelDataAccessor {
 
-    @Mutable
-    @Accessor
-    void setWorldOptions(WorldOptions generatorOptions);
+    // TODO
+//    @Mutable
+//    @Accessor
+//    void setWorldOptions(WorldOptions generatorOptions);
 }

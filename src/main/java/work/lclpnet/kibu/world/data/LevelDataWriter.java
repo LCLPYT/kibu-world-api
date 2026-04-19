@@ -19,7 +19,7 @@ public interface LevelDataWriter {
         LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
         ResourceKey<Level> registryKey = world.dimension();
 
-        Path levelDat = session.getDimensionPath(registryKey).resolve(LevelResource.LEVEL_DATA_FILE.getId());
+        Path levelDat = session.getDimensionPath(registryKey).resolve(LevelResource.LEVEL_DATA_FILE.id());
 
         writeLevelData(world, levelDat);
     }

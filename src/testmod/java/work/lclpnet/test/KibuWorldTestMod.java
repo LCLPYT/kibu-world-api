@@ -7,7 +7,7 @@ public class KibuWorldTestMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+        CommandRegistrationCallback.EVENT.register((dispatcher, _, _) ->
                 new WorldCommand().register(dispatcher));
     }
 }

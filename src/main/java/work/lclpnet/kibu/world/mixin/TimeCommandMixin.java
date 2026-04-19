@@ -15,23 +15,24 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(TimeCommand.class)
 public class TimeCommandMixin {
 
-    @WrapOperation(
-            method = {"setTime", "addTime"},
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/server/MinecraftServer;getAllLevels()Ljava/lang/Iterable;"
-            )
-    )
-    private static Iterable<ServerLevel> kibu$filterWorlds(MinecraftServer instance, Operation<Iterable<ServerLevel>> original,
-                                                           @Local(argsOnly = true) CommandSourceStack source) {
-
-        Iterable<ServerLevel> worlds = original.call(instance);
-        ServerPlayer player = source.getPlayer();
-
-        if (player == null) {
-            return worlds;
-        }
-
-        return Iterables.filter(worlds, player.level()::equals);
-    }
+    // TODO
+//    @WrapOperation(
+//            method = {"setTime", "addTime"},
+//            at = @At(
+//                    value = "INVOKE",
+//                    target = "Lnet/minecraft/server/MinecraftServer;getAllLevels()Ljava/lang/Iterable;"
+//            )
+//    )
+//    private static Iterable<ServerLevel> kibu$filterWorlds(MinecraftServer instance, Operation<Iterable<ServerLevel>> original,
+//                                                           @Local(argsOnly = true) CommandSourceStack source) {
+//
+//        Iterable<ServerLevel> worlds = original.call(instance);
+//        ServerPlayer player = source.getPlayer();
+//
+//        if (player == null) {
+//            return worlds;
+//        }
+//
+//        return Iterables.filter(worlds, player.level()::equals);
+//    }
 }

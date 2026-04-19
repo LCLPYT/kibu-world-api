@@ -18,12 +18,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
-import work.lclpnet.kibu.world.KibuWorlds;
+import work.lclpnet.kibu.world.KibuLevels;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.init.KibuWorldsInit;
 import xyz.nucleoid.fantasy.Fantasy;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-import xyz.nucleoid.fantasy.RuntimeWorldHandle;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -60,16 +60,16 @@ public class WorldCommand {
 
         MinecraftServer server = ctx.getSource().getServer();
 
-        RuntimeWorldConfig config = new RuntimeWorldConfig()
+        RuntimeLevelConfig config = new RuntimeLevelConfig()
                 .setDimensionType(BuiltinDimensionTypes.OVERWORLD)
                 .setDifficulty(Difficulty.NORMAL)
                 .setGenerator(server.overworld().getChunkSource().getGenerator())
                 .setSeed(123);
 
-        RuntimeWorldHandle handle;
+        RuntimeLevelHandle handle;
 
         try {
-            handle = Fantasy.get(server).getOrOpenPersistentWorld(id, config);
+            handle = Fantasy.get(server).getOrOpenPersistentLevel(id, config);
         } catch (Throwable t) {
             KibuWorldsInit.LOGGER.error("Failed to open persistent world", t);
             ctx.getSource().sendFailure(Component.literal("Failed to open permanent world. More details in the console"));
@@ -84,16 +84,16 @@ public class WorldCommand {
     private int createTmp(CommandContext<CommandSourceStack> ctx) {
         MinecraftServer server = ctx.getSource().getServer();
 
-        RuntimeWorldConfig config = new RuntimeWorldConfig()
+        RuntimeLevelConfig config = new RuntimeLevelConfig()
                 .setDimensionType(BuiltinDimensionTypes.OVERWORLD)
                 .setDifficulty(Difficulty.NORMAL)
                 .setGenerator(server.overworld().getChunkSource().getGenerator())
                 .setSeed(123);
 
-        RuntimeWorldHandle handle;
+        RuntimeLevelHandle handle;
 
         try {
-            handle = Fantasy.get(server).openTemporaryWorld(config);
+            handle = Fantasy.get(server).openTemporaryLevel(config);
         } catch (Throwable t) {
             KibuWorldsInit.LOGGER.error("Failed to create temporary world", t);
             ctx.getSource().sendFailure(Component.literal("Failed to create temporary world. More details in the console"));
@@ -110,7 +110,7 @@ public class WorldCommand {
 
         CommandSourceStack source = ctx.getSource();
         MinecraftServer server = source.getServer();
-        WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+        WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
         var handle = worldManager.openPersistentWorld(id);
 

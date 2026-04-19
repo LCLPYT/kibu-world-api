@@ -5,5 +5,5 @@ import net.minecraft.server.level.ServerLevel;
 
 public interface LevelDataSerializer {
 
-    CompoundTag serializeLevelData(ServerLevel world);
+    CompoundTag serializeLevelData(ServerLevel level);
 }

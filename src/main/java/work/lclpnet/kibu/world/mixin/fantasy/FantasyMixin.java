@@ -8,12 +8,12 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import work.lclpnet.kibu.world.KibuWorlds;
+import work.lclpnet.kibu.world.KibuLevels;
 import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
 import xyz.nucleoid.fantasy.Fantasy;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-import xyz.nucleoid.fantasy.RuntimeWorldHandle;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
 @Mixin(value = Fantasy.class)
 public class FantasyMixin {
@@ -21,12 +21,12 @@ public class FantasyMixin {
     @Shadow(remap = false) @Final private MinecraftServer server;
 
     @Inject(
-            method = "openTemporaryWorld(Lnet/minecraft/resources/Identifier;Lxyz/nucleoid/fantasy/RuntimeWorldConfig;)Lxyz/nucleoid/fantasy/RuntimeWorldHandle;",
+            method = "openTemporaryLevel(Lxyz/nucleoid/fantasy/RuntimeLevelConfig;)Lxyz/nucleoid/fantasy/RuntimeLevelHandle;",
             at = @At("RETURN")
     )
-    public void kibu$openTemporaryWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
-        RuntimeWorldHandle handle = cir.getReturnValue();
-        WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+    public void kibu$openTemporaryLevel(RuntimeLevelConfig config, CallbackInfoReturnable<RuntimeLevelHandle> cir) {
+        RuntimeLevelHandle handle = cir.getReturnValue();
+        WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
         if (worldManager instanceof WorldHandleTracker tracker) {
             tracker.registerWorldHandle(handle);
@@ -34,12 +34,12 @@ public class FantasyMixin {
     }
 
     @Inject(
-            method = "getOrOpenPersistentWorld",
+            method = "getOrOpenPersistentLevel",
             at = @At("RETURN")
     )
-    public void kibu$getOrOpenPersistentWorld(Identifier key, RuntimeWorldConfig config, CallbackInfoReturnable<RuntimeWorldHandle> cir) {
-        RuntimeWorldHandle handle = cir.getReturnValue();
-        WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
+    public void kibu$getOrOpenPersistentWorld(Identifier key, RuntimeLevelConfig config, CallbackInfoReturnable<RuntimeLevelHandle> cir) {
+        RuntimeLevelHandle handle = cir.getReturnValue();
+        WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
         if (worldManager instanceof WorldHandleTracker tracker) {
             tracker.registerWorldHandle(handle);

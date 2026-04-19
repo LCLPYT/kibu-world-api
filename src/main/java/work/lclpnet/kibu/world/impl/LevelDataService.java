@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.data.LevelDataSerializer;
 import work.lclpnet.kibu.world.mixin.PrimaryLevelDataAccessor;
-import xyz.nucleoid.fantasy.RuntimeWorld;
+import xyz.nucleoid.fantasy.RuntimeLevel;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -47,12 +47,12 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
     }
 
     @Override
-    public CompoundTag serializeLevelData(ServerLevel world) {
-        PrimaryLevelData saveProperties = getLevelProperties(world);
+    public CompoundTag serializeLevelData(ServerLevel level) {
+        PrimaryLevelData saveProperties = getLevelProperties(level);
 
-        RegistryAccess registryManager = getCustomRegistryManager(world);
+        RegistryAccess registryManager = getCustomRegistryManager(level);
 
-        CompoundTag data = saveProperties.createTag(registryManager, null);
+        CompoundTag data = saveProperties.createTag(null);
 
         CompoundTag nbt = new CompoundTag();
         nbt.put("Data", data);
@@ -76,39 +76,40 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         LevelData worldProps = world.getLevelData();
 
         // runtime worlds do not store generator options in the level properties atm
-        if (world instanceof RuntimeWorld runtimeWorld) {
+        if (world instanceof RuntimeLevel RuntimeLevel) {
             PrimaryLevelDataAccessor writer = (PrimaryLevelDataAccessor) props;
 
             // copy generator options here
             WorldOptions genOpts = new WorldOptions(
-                    runtimeWorld.getSeed(),
-                    runtimeWorld.structureManager().shouldGenerateStructures(),
+                    RuntimeLevel.getSeed(),
+                    RuntimeLevel.structureManager().shouldGenerateStructures(),
                     false
             );
 
-            writer.setWorldOptions(genOpts);
+            // TODO
+//            writer.setWorldOptions(genOpts);
         }
 
         // vanilla encapsulation
         props.setDifficulty(worldProps.getDifficulty());
         props.setSpawn(worldProps.getRespawnData());
         props.setGameTime(worldProps.getGameTime());
-        props.setDayTime(worldProps.getDayTime());
+//        props.setDayTime(worldProps.getDayTime());
         props.setDifficultyLocked(worldProps.isDifficultyLocked());
-        props.setRaining(worldProps.isRaining());
-        props.setThundering(worldProps.isThundering());
+//        props.setRaining(worldProps.isRaining());
+//        props.setThundering(worldProps.isThundering());
 
         if (worldProps instanceof ServerLevelData swProps) {
-            props.getGameRules().setAll(swProps.getGameRules(), null);
-            props.setClearWeatherTime(swProps.getClearWeatherTime());
-            props.setRainTime(swProps.getRainTime());
-            props.setThunderTime(swProps.getThunderTime());
+//            props.getGameRules().setAll(swProps.getGameRules(), null);
+//            props.setClearWeatherTime(swProps.getClearWeatherTime());
+//            props.setRainTime(swProps.getRainTime());
+//            props.setThunderTime(swProps.getThunderTime());
             props.setGameType(swProps.getGameType());
             props.setInitialized(swProps.isInitialized());
-            props.setWanderingTraderId(swProps.getWanderingTraderId());
-            props.setWanderingTraderSpawnChance(swProps.getWanderingTraderSpawnChance());
-            props.setWanderingTraderSpawnDelay(swProps.getWanderingTraderSpawnDelay());
-            props.setLegacyWorldBorderSettings(swProps.getLegacyWorldBorderSettings());
+//            props.setWanderingTraderId(swProps.getWanderingTraderId());
+//            props.setWanderingTraderSpawnChance(swProps.getWanderingTraderSpawnChance());
+//            props.setWanderingTraderSpawnDelay(swProps.getWanderingTraderSpawnDelay());
+//            props.setLegacyWorldBorderSettings(swProps.getLegacyWorldBorderSettings());
         }
 
         return props;
@@ -120,7 +121,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
      * @return Cloned properties as level properties.
      */
     private PrimaryLevelData cloneSaveProperties(MinecraftServer server, WorldData properties) {
-        CompoundTag data = properties.createTag(server.registryAccess(), null);
+        CompoundTag data = properties.createTag(null);
 
         CompoundTag nbt = new CompoundTag();
         nbt.put("Data", data);
@@ -183,7 +184,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
         CompoundTag data = levelData.getCompoundOrEmpty("Data");
         WorldDataConfiguration dataConfiguration = getDataConfiguration(data, dataFixer);
-        LevelSettings levelInfo = LevelSettings.parse(dynamic, dataConfiguration);
+        LevelSettings levelSettings = LevelSettings.parse(dynamic, dataConfiguration);
 
         // use an empty registry to only read the entries from the nbt
         Registry<LevelStem> existingDimOptions = new MappedRegistry<>(Registries.LEVEL_STEM, registryLifecycle);
@@ -193,8 +194,8 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
         Lifecycle propsLifecycle = dimensionsConfig.lifecycle().add(registryLifecycle);
 
-        PrimaryLevelData levelProperties = PrimaryLevelData.parse(dynamic, levelInfo,
-                dimensionsConfig.specialWorldProperty(), worldGenSettings.options(), propsLifecycle);
+        PrimaryLevelData levelProperties = PrimaryLevelData.parse(dynamic, levelSettings,
+                dimensionsConfig.specialWorldProperty(), propsLifecycle);
 
         return new Result(levelProperties, dimensionsConfig);
     }
