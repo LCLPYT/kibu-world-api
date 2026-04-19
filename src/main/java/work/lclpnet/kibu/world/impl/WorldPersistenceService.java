@@ -21,9 +21,11 @@ import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.level.gamerules.GameRuleMap;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
+import net.minecraft.world.level.saveddata.WeatherData;
 import net.minecraft.world.level.storage.*;
 import net.minecraft.world.level.validation.ContentValidationException;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
+import work.lclpnet.kibu.world.KibuLevelConfig;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeLevelConfig;
@@ -86,10 +89,9 @@ public class WorldPersistenceService {
 
     @Nullable
     public RuntimeLevelConfig restoreConfig(ResourceKey<Level> registryKey) {
-        // TODO this changed; still interesting to read from this: spawn, level name?, data packs
-        Result result = readPersistedData(registryKey);
+        Result persistedData = readPersistedData(registryKey);
 
-        WorldGenSettings worldGenSettings = result.worldGenSettings().orElse(null);
+        WorldGenSettings worldGenSettings = persistedData.worldGenSettings().orElse(null);
 
         if (worldGenSettings == null) {
             logger.warn("Cannot restore level config of a level that wasn't saved with kibu-world-api installed");
@@ -112,11 +114,14 @@ public class WorldPersistenceService {
         @Nullable PrimaryLevelData primaryLevelData = readPrimaryLevelData(registryKey, worldGenSettings);
 
         if (primaryLevelData != null) {
+            ((KibuLevelConfig) (Object) config).kibu$setPrimaryLevelData(primaryLevelData);
+
             config
                     .setFlat(primaryLevelData.isFlatWorld())
                     .setDifficulty(primaryLevelData.getDifficulty())
                     .setGameTime(primaryLevelData.getGameTime());
         }
+
 
         // TODO
 //        config.setSunny(properties.getClearWeatherTime());
@@ -126,15 +131,21 @@ public class WorldPersistenceService {
 //        config.setThundering(properties.getThunderTime());
 //        config.setTimeOfDay(properties.getDayTime());
 
-        // TODO
-//        GameRules gameRules = properties.getGameRules();
-//        gameRules.availableRules().forEach(rule -> {
-//            var value = gameRules.get(rule);
-//
-//            assign(config, rule, value);
-//        });
+        persistedData.gameRuleMap().ifPresent(gameRuleMap -> {
+            for (GameRule<?> rule : gameRuleMap.keySet()) {
+                var value = gameRuleMap.get(rule);
 
-        config.setShouldTickTime(config.getGameRules().get(GameRules.ADVANCE_TIME));
+                if (value == null) continue;
+
+                assign(config, rule, value);
+            }
+        });
+
+        Object shouldTickTime = config.getGameRules().get(GameRules.ADVANCE_TIME);
+
+        if (shouldTickTime instanceof Boolean b) {
+            config.setShouldTickTime(b);
+        }
 
         return config;
     }
@@ -175,8 +186,14 @@ public class WorldPersistenceService {
 
         try (var storage = new SavedDataStorage(dataPath, fixerUpper, registryManager)) {
             @Nullable WorldGenSettings worldGenSettings = storage.get(WorldGenSettings.TYPE);
+            @Nullable GameRuleMap gameRuleMap = storage.get(GameRuleMap.TYPE);
+            @Nullable WeatherData weatherData = storage.get(WeatherData.TYPE);
 
-            return new Result(Optional.ofNullable(worldGenSettings));
+            return new Result(
+                    Optional.ofNullable(worldGenSettings),
+                    Optional.ofNullable(gameRuleMap),
+                    Optional.ofNullable(weatherData)
+            );
         }
     }
 
@@ -267,6 +284,8 @@ public class WorldPersistenceService {
     }
 
     private record Result(
-            Optional<WorldGenSettings> worldGenSettings
+            Optional<WorldGenSettings> worldGenSettings,
+            Optional<GameRuleMap> gameRuleMap,
+            Optional<WeatherData> weatherData
     ) {}
 }
