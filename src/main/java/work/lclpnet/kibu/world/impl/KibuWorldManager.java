@@ -12,8 +12,10 @@ import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.data.LevelDataWriter;
 import work.lclpnet.kibu.world.init.KibuWorldsInit;
+import work.lclpnet.kibu.world.mixin.fantasy.RuntimeLevelDataAccessor;
 import xyz.nucleoid.fantasy.RuntimeLevel;
 import xyz.nucleoid.fantasy.RuntimeLevelConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelData;
 import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
 import java.io.IOException;
@@ -31,7 +33,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
 
     public KibuWorldManager(MinecraftServer server) {
         this.levelDataService = new LevelDataService(KibuWorldsInit.LOGGER);
-        this.worldPersistenceService = new WorldPersistenceService(server, levelDataService, KibuWorldsInit.LOGGER);
+        this.worldPersistenceService = new WorldPersistenceService(server, KibuWorldsInit.LOGGER);
     }
 
     public Set<RuntimeLevelHandle> getRuntimeLevelHandles() {
@@ -57,7 +59,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeLevelConfig> getWorldConfig(Identifier identifier) {
+    public Optional<RuntimeLevelConfig> getStoredLevelConfig(Identifier identifier) {
         var registryKey = ResourceKey.create(Registries.DIMENSION, identifier);
 
         RuntimeLevelConfig config = worldPersistenceService.restoreConfig(registryKey);
@@ -78,9 +80,9 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
         }
 
         // TODO
-//        if (world.getLevelData() instanceof RuntimeLevelProperties rtProps) {
-//            return Optional.of(((RuntimeLevelPropertiesAccessor) (Object) rtProps).getConfig());
-//        }
+        if (world.getLevelData() instanceof RuntimeLevelData rtData) {
+            return Optional.of(((RuntimeLevelDataAccessor) (Object) rtData).getConfig());
+        }
 
         return Optional.empty();
     }

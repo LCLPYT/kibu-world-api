@@ -1,48 +1,54 @@
 package work.lclpnet.kibu.world.impl;
 
+import com.mojang.datafixers.DataFixer;
+import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.Lifecycle;
+import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtAccounter;
-import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.*;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.worldupdate.UpgradeProgress;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelSettings;
+import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.WorldDimensions;
-import net.minecraft.world.level.levelgen.WorldOptions;
-import net.minecraft.world.level.storage.LevelResource;
-import net.minecraft.world.level.storage.LevelStorageSource;
-import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
+import net.minecraft.world.level.storage.*;
+import net.minecraft.world.level.validation.ContentValidationException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
-import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
 @ApiStatus.Internal
 public class WorldPersistenceService {
 
     private final MinecraftServer server;
-    private final LevelDataDeserializer dataReader;
     private final Logger logger;
 
-    public WorldPersistenceService(MinecraftServer server, LevelDataDeserializer dataReader, Logger logger) {
+    public WorldPersistenceService(MinecraftServer server, Logger logger) {
         this.server = server;
-        this.dataReader = dataReader;
         this.logger = logger;
     }
 
@@ -80,32 +86,39 @@ public class WorldPersistenceService {
 
     @Nullable
     public RuntimeLevelConfig restoreConfig(ResourceKey<Level> registryKey) {
-        // try to read levelData
-        LevelDataDeserializer.Result levelData = readLevelData(registryKey);
+        // TODO this changed; still interesting to read from this: spawn, level name?, data packs
+        Result result = readPersistedData(registryKey);
 
-        if (levelData == null) {
+        WorldGenSettings worldGenSettings = result.worldGenSettings().orElse(null);
+
+        if (worldGenSettings == null) {
+            logger.warn("Cannot restore level config of a level that wasn't saved with kibu-world-api installed");
             return null;
         }
 
-        PrimaryLevelData properties = levelData.properties();
-        WorldDimensions.Complete dimensionsConfig = levelData.dimensions();
-
-        LevelStem dimension = findMainDimension(dimensionsConfig);
+        LevelStem dimension = findMainDimension(worldGenSettings.dimensions());
 
         if (dimension == null) {
-            logger.error("Could not find main dimension for level {}", properties.getLevelName());
+            logger.error("Could not find main dimension for level {}", registryKey);
             return null;
         }
 
         RuntimeLevelConfig config = new RuntimeLevelConfig()
                 .setDimensionType(dimension.type())
                 .setGenerator(dimension.generator())
-                .setFlat(properties.isFlatWorld())
-                .setDifficulty(properties.getDifficulty());
+                .setSeed(worldGenSettings.options().seed());
 
-//        WorldOptions generatorOptions = properties.worldGenOptions(); // TODO
-//        config.setSeed(generatorOptions.seed());
+        // primary level data from level.dat in the dimension directory is written by kibu-world-api
+        @Nullable PrimaryLevelData primaryLevelData = readPrimaryLevelData(registryKey, worldGenSettings);
 
+        if (primaryLevelData != null) {
+            config
+                    .setFlat(primaryLevelData.isFlatWorld())
+                    .setDifficulty(primaryLevelData.getDifficulty())
+                    .setGameTime(primaryLevelData.getGameTime());
+        }
+
+        // TODO
 //        config.setSunny(properties.getClearWeatherTime());
 //        config.setRaining(properties.getRainTime());
 //        config.setRaining(properties.isRaining());
@@ -113,6 +126,7 @@ public class WorldPersistenceService {
 //        config.setThundering(properties.getThunderTime());
 //        config.setTimeOfDay(properties.getDayTime());
 
+        // TODO
 //        GameRules gameRules = properties.getGameRules();
 //        gameRules.availableRules().forEach(rule -> {
 //            var value = gameRules.get(rule);
@@ -131,19 +145,17 @@ public class WorldPersistenceService {
     }
 
     @Nullable
-    private LevelStem findMainDimension(WorldDimensions.Complete config) {
-        Registry<LevelStem> dimensions = config.dimensions();
+    private LevelStem findMainDimension(WorldDimensions worldDimensions) {
+        Map<ResourceKey<LevelStem>, LevelStem> dimensions = worldDimensions.dimensions();
 
-        if (dimensions.containsKey(LevelStem.OVERWORLD)) {
-            LevelStem overworld = dimensions.getValue(LevelStem.OVERWORLD);
+        LevelStem overworld = dimensions.get(LevelStem.OVERWORLD);
 
-            if (overworld != null) {
-                return overworld;
-            }
+        if (overworld != null) {
+            return overworld;
         }
 
         // there is no overworld entry, accept any other dimension
-        var iterator = dimensions.iterator();
+        var iterator = dimensions.values().iterator();
 
         if (iterator.hasNext()) {
             return iterator.next();
@@ -152,32 +164,109 @@ public class WorldPersistenceService {
         return null;
     }
 
+    private WorldPersistenceService.Result readPersistedData(ResourceKey<Level> registryKey) {
+        LevelStorageSource.LevelStorageAccess access = ((MinecraftServerAccessor) server).getStorageSource();
+
+        Path path = access.getDimensionPath(registryKey);
+        RegistryAccess.Frozen registryManager = server.registries().compositeAccess();
+
+        Path dataPath = path.resolve("data");
+        DataFixer fixerUpper = server.getFixerUpper();
+
+        try (var storage = new SavedDataStorage(dataPath, fixerUpper, registryManager)) {
+            @Nullable WorldGenSettings worldGenSettings = storage.get(WorldGenSettings.TYPE);
+
+            return new Result(Optional.ofNullable(worldGenSettings));
+        }
+    }
+
     @Nullable
-    private LevelDataDeserializer.Result readLevelData(ResourceKey<Level> registryKey) {
-        Path directory = getWorldDirectory(registryKey);
-        Path levelDat = directory.resolve(LevelResource.LEVEL_DATA_FILE.id());
+    private PrimaryLevelData readPrimaryLevelData(ResourceKey<Level> registryKey, WorldGenSettings worldGenSettings) {
+        Path worldDir = getWorldDirectory(registryKey);
 
-        if (!Files.exists(levelDat)) {
-            logger.warn("Level data file does not exist at {}", levelDat);
-            return null;
+        var registryManager = server.registries().compositeAccess();
+        DataFixer dataFixer = server.getFixerUpper();
+
+        LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(worldDir.getParent());
+
+        String name = worldDir.getFileName().toString();
+
+        // from net.minecraft.server.Main.main
+        try (LevelStorageSource.LevelStorageAccess access = levelStorageSource.validateAndCreateAccess(name)) {
+            if (!access.hasWorldData()) {
+                return null;
+            }
+
+            Dynamic<?> levelDataUnfixed;
+
+            try {
+                levelDataUnfixed = access.getUnfixedDataTagWithFallback();
+            } catch (NbtException | ReportedNbtException | IOException var39) {
+                logger.error("Failed to load world data. World files may be corrupted.", var39);
+                return null;
+            }
+
+            LevelSummary summary = access.fixAndGetSummaryFromTag(levelDataUnfixed);
+            if (summary.requiresManualConversion()) {
+                logger.info("This world must be opened in an older version (like 1.6.4) to be safely converted");
+                return null;
+            }
+
+            if (!summary.isCompatible()) {
+                logger.info("This world was created by an incompatible version.");
+                return null;
+            }
+
+            Dynamic<?> levelDataTag = DataFixers.getFileFixer().fix(access, levelDataUnfixed, new UpgradeProgress());
+
+            return readPrimaryLevelDataFromTag(worldGenSettings, levelDataTag, registryManager, dataFixer);
+        } catch (IOException | ContentValidationException e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        CompoundTag nbt;
+    private @NonNull PrimaryLevelData readPrimaryLevelDataFromTag(
+            WorldGenSettings worldGenSettings,
+            Dynamic<?> levelDataTag,
+            RegistryAccess.Frozen registryManager,
+            DataFixer dataFixer
+    ) {
+        // adapted from net.minecraft.world.level.storage.LevelStorageSource.getLevelDataAndDimensions
+        Dynamic<?> dataTag = RegistryOps.injectRegistryContext(levelDataTag, registryManager);
 
-        try (var in = Files.newInputStream(levelDat)) {
-            nbt = NbtIo.readCompressed(in, NbtAccounter.unlimitedHeap());
-        } catch (IOException e) {
-            logger.error("Failed to read compressed nbt from {}", levelDat, e);
-            return null;
-        }
+        Lifecycle registryLifecycle = registryManager.allRegistriesLifecycle();
 
-        return dataReader.deserializeLevelData(nbt, server);
+        // use an empty registry to only read the entries from the nbt
+        Registry<LevelStem> existingDimOptions = new MappedRegistry<>(Registries.LEVEL_STEM, registryLifecycle);
+        WorldDimensions.Complete dimensions = worldGenSettings.dimensions().bake(existingDimOptions);
+
+        WorldDataConfiguration dataConfiguration = getDataConfiguration(dataTag, dataFixer);
+        LevelSettings settings = LevelSettings.parse(dataTag, dataConfiguration);
+
+        Lifecycle lifecycle = dimensions.lifecycle().add(registryLifecycle);
+
+        return PrimaryLevelData.parse(dataTag, settings, dimensions.specialWorldProperty(), lifecycle);
+    }
+
+    @NotNull
+    private WorldDataConfiguration getDataConfiguration(Dynamic<?> data, DataFixer dataFixer) {
+        int dataVersion = NbtUtils.getDataVersion(data, -1);
+
+        Dynamic<?> dynamic = DataFixTypes.LEVEL.updateToCurrentVersion(dataFixer, data, dataVersion);
+
+        return WorldDataConfiguration.CODEC.parse(dynamic)
+                .resultOrPartial(logger::error)
+                .orElse(WorldDataConfiguration.DEFAULT);
     }
 
     @NotNull
     private Path getWorldDirectory(ResourceKey<Level> registryKey) {
-        LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
+        LevelStorageSource.LevelStorageAccess access = ((MinecraftServerAccessor) server).getStorageSource();
 
-        return session.getDimensionPath(registryKey);
+        return access.getDimensionPath(registryKey);
     }
+
+    private record Result(
+            Optional<WorldGenSettings> worldGenSettings
+    ) {}
 }

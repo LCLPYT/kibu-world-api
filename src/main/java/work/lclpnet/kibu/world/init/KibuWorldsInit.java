@@ -3,6 +3,7 @@ package work.lclpnet.kibu.world.init;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.slf4j.Logger;
@@ -76,5 +77,9 @@ public class KibuWorldsInit implements ModInitializer {
         });
 
         LOGGER.info("Initialized.");
+    }
+
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(KIBU_WORLD_API_MOD_ID, path);
     }
 }

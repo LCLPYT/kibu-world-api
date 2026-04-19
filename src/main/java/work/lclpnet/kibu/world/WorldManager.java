@@ -33,7 +33,7 @@ public interface WorldManager {
      * @param identifier The dimension identifier.
      * @return The runtime world config, or empty if there is no level data to load.
      */
-    Optional<RuntimeLevelConfig> getWorldConfig(Identifier identifier);
+    Optional<RuntimeLevelConfig> getStoredLevelConfig(Identifier identifier);
 
     /**
      * Gets the {@link } of a {@link xyz.nucleoid.fantasy.RuntimeLevel} with the given dimension identifier.
