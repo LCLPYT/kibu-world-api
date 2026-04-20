@@ -1,16 +1,30 @@
 # kibu-world-api
 An extension for the [fantasy](https://github.com/NucleoidMC/fantasy) mod for fabric. 
-Allows for world re-creation from the persisted level.dat file. 
+Allows for dimension re-creation by saving a few new vanilla compatible files into the dimension directory, needed for re-creating the world generator, game rules, weather etc.
 Also serves as runtime world manager, which holds handles to all created runtime worlds. 
 This mod is part of the [kibu](https://github.com/LCLPYT/kibu) modding library, but packaged in a separate mod to avoid third-party mod dependencies in the base project.
 
 ## Features
-- load and restore worlds from level.dat file
+- load and restore dimensions
 - provides a runtime world manager API, that keeps track of runtime world handles
-- creates level.dat if needed when saving runtime worlds
-- per-world game rules (patches the /gamerule command)
-- per-world time (patches the /time command)
-- per-world weather (patches the /weather command)
+- creates level.dat for runtime levels to save details like spawn position, game time etc. of that specific dimension
+- per-dimension game rules (patches the /gamerule command)
+- per-dimension weather (patches the /weather command)
+- per-dimension time
+- per-dimension world spawns for runtime levels
+
+## Migration guide
+> [!NOTE]
+> Mojang changed the way dimension data is stored in Minecraft 26.1.
+> If you've used kibu-world-api before, like in 1.21.11 and earlier, you'll need to migrate your worlds in order to use them in new versions.
+
+1. Launch Minecraft 26.1 or later in singleplayer.
+2. Copy the dimension you want to migrate to the `saves/` directory of your singleplayer instance.
+3. In the singleplayer world selection screen, select the world and click "Upgrade and Play". Create a backup if you want. You don't need to join the world.
+4. Verify the directory of the world contains level.dat and verify that `data/minecraft/world_gen_settings.dat` exists (otherwise it will not be loadable by kibu-world api). If not, you must first create a new world to use as template or copy those files from another world.
+5. In the directory of the world, find the `dimensions/minecraft/overworld` directory and copy its contents directory into the world directory.
+6. Delete the `dimensions/` directory
+7. The "world" is now converted to be a "dimension" and may be copied the target dimension directory. 
 
 ## Gradle Dependency
 You can install kibu-world-api via Gradle.
