@@ -8,15 +8,38 @@ This mod is part of the [kibu](https://github.com/LCLPYT/kibu) modding library, 
 - load and restore dimensions
 - provides a runtime world manager API, that keeps track of runtime world handles
 - creates level.dat for runtime levels to save details like spawn position, game time etc. of that specific dimension
-- per-dimension game rules (patches the /gamerule command)
-- per-dimension weather (patches the /weather command)
+- per-dimension game rules
+- per-dimension weather
 - per-dimension time
-- per-dimension world spawns for runtime levels
+- per-dimension world spawns
 
-## Migration guide
+## How it works
+This mod injects some code into some parts of the Fantasy mod.
+This allows for tracking of all `RuntimeLevelHandle`s etc. which is useful for other mods.
+
+By default, Fantasy only allows for dimension creation by explicitly passing it the required chunk generator, game rules, time etc. using code.
+This mod makes it possible to skip this step and to "just load a dimension".
+For that, aspects like the chunk generator, game rules, current time, current weather etc. have to be stored somehow, which is not normally done by vanilla Minecraft.
+This mod uses the same data storage as vanilla uses for whole worlds (`level.dat`, `data/minecraft/world_gen_settings.dat`, `data/minecraft/weather.dat` ...) but adapts it for single dimensions.
+This way, data migrations should still be supported, since the same logic is reused.
+
+In practice, this mod hooks into the world save process and creates all necessary data files in the dimension `data/minecraft/` folder, which normally only get written to the world `data/minecraft/` folder.
+Additionally, a `level.dat` file is also created in the dimension directory, which is also normally only written to the world directory.
+Once those files exist, the dimension may be loaded by kibu-world-api.
+
+Some additional patches are also made, such as:
+- using the correct game rule store in the /gamerule command
+- introducing dimension-specific weather and modifying it using /weather
+- introducing dimension-specific world spawns for runtime worlds (runtime dimensions may not be used as global world spawn)
+- proper world-border integration, which fantasy still lacks
+
+## Migration guide from 1.21.11 and earlier
 > [!NOTE]
 > Mojang changed the way dimension data is stored in Minecraft 26.1.
 > If you've used kibu-world-api before, like in 1.21.11 and earlier, you'll need to migrate your worlds in order to use them in new versions.
+
+The following migration will convert a "world" from a Minecraft version prior to 26.1 into a "dimension" compatible with 26.1 and later.
+Unlike worlds, dimensions cannot be opened in singleplayer / on a server as standalone level.
 
 1. Launch Minecraft 26.1 or later in singleplayer.
 2. Copy the dimension you want to migrate to the `saves/` directory of your singleplayer instance.
@@ -24,7 +47,12 @@ This mod is part of the [kibu](https://github.com/LCLPYT/kibu) modding library, 
 4. Verify the directory of the world contains `level.dat` and verify that `data/minecraft/world_gen_settings.dat` exists (otherwise it will not be loadable by kibu-world-api). If not, you must first create a new world to use as template or copy those files from another world.
 5. In the directory of the world, find the `dimensions/minecraft/overworld` directory and copy its contents directory into the world directory.
 6. Delete the `dimensions/` directory
-7. The "world" is now converted to be a "dimension" and may be copied to the target dimension directory. 
+7. The "world" is now converted to be a "dimension" and may be copied to the target dimension directory.
+
+Dimensions may be added to existing worlds by copying them to `dimensions/<namespace>/<path>`.
+Those dimensions will not be loaded, unless you use fantasy (+ kibu-world-api) or create a datapack to tell Minecraft that your dimension exists.
+
+If you want to convert a dimension to a world, revert the steps 6 and 5 (you can copy the whole `data/` folder to the dimension).
 
 ## Gradle Dependency
 You can install kibu-world-api via Gradle.
@@ -40,7 +68,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation 'work.lclpnet.mods.kibu:kibu-world-api:0.9.2+1.20.10'  // replace with your version
+    modImplementation 'work.lclpnet.mods.kibu:kibu-world-api:0.10.0+26.1.2'  // replace with your version
 }
 ```
 All available versions can be found [here](https://repo.lclpnet.work/#artifact/work.lclpnet.mods.kibu/kibu-world-api).
