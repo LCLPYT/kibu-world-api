@@ -113,7 +113,7 @@ public class WorldCommand {
         MinecraftServer server = source.getServer();
         WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
-        var handle = worldManager.openPersistentWorld(id);
+        var handle = worldManager.openPersistentLevel(id);
 
         if (handle.isEmpty()) {
             source.sendSystemMessage(Component.literal("Failed to open world"));

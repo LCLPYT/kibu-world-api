@@ -15,9 +15,9 @@ public interface WorldManager {
     Optional<RuntimeLevelHandle> getRuntimeLevelHandle(ServerLevel level);
 
     /**
-     * Open a persistent world created by fantasy, using stored level data.
+     * Open a persistent level created by fantasy, using stored level data.
      * @param identifier The dimension identifier.
-     * @return The runtime world handle, or empty if the persistent world could not be restored.
+     * @return The runtime level handle, or empty if the persistent world could not be restored.
      * @apiNote If the world could not be opened, e.g. if the returned {@link Optional} is empty,
      * the consumer should call {@link xyz.nucleoid.fantasy.Fantasy#getOrOpenPersistentLevel(Identifier, RuntimeLevelConfig)}
      * instead.
@@ -25,7 +25,7 @@ public interface WorldManager {
      * Newly generated chunks in that world would then be incoherent.
      * This is why the consumer is responsible for re-creating the world.
      */
-    Optional<RuntimeLevelHandle> openPersistentWorld(Identifier identifier);
+    Optional<RuntimeLevelHandle> openPersistentLevel(Identifier identifier);
 
     /**
      * Attempts to create a {@link } from level data on disk.
@@ -45,11 +45,11 @@ public interface WorldManager {
 
     /**
      * Gets the {@link RuntimeLevelConfig} of a {@link ServerLevel} if it is a {@link xyz.nucleoid.fantasy.RuntimeLevel}.
-     * @param world The runtime world.
-     * @return The runtime world config of the given {@link xyz.nucleoid.fantasy.RuntimeLevel} dimension,
-     * or empty if there given world is not a {@link xyz.nucleoid.fantasy.RuntimeLevel}.
+     * @param level The runtime level.
+     * @return The runtime level config of the given {@link xyz.nucleoid.fantasy.RuntimeLevel} dimension,
+     * or empty if there given level is not a {@link xyz.nucleoid.fantasy.RuntimeLevel}.
      */
-    default Optional<RuntimeLevelConfig> getRuntimeLevelConfig(ServerLevel world) {
-        return getRuntimeLevelConfig(world.dimension().identifier());
+    default Optional<RuntimeLevelConfig> getRuntimeLevelConfig(ServerLevel level) {
+        return getRuntimeLevelConfig(level.dimension().identifier());
     }
 }

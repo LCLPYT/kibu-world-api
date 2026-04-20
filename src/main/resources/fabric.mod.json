@@ -3,7 +3,7 @@
 	"id": "kibu-world-api",
 	"version": "${version}",
 	"name": "Kibu World API",
-	"description": "API for loading / unloading worlds with the fantasy mod",
+	"description": "API for loading / unloading dimensions with the fantasy mod",
 	"authors": [
 		"LCLP"
 	],

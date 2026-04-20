@@ -57,7 +57,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public Optional<RuntimeLevelHandle> openPersistentWorld(Identifier identifier) {
+    public Optional<RuntimeLevelHandle> openPersistentLevel(Identifier identifier) {
         return worldPersistenceService.tryRecreateWorld(identifier);
     }
 
