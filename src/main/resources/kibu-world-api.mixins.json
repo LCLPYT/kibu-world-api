@@ -10,9 +10,7 @@
     "GameRuleCommandMixin",
     "MinecraftServerAccessor",
     "MinecraftServerMixin",
-    "PrimaryLevelDataAccessor",
     "ServerLevelAccessor",
-    "TimeCommandMixin",
     "WeatherCommandMixin"
   ]
 }

@@ -82,18 +82,8 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 //        props.setThundering(levelData.isThundering());
 
         if (levelData instanceof ServerLevelData swProps) {
-            // TODO move to other file
-//            props.getGameRules().setAll(swProps.getGameRules(), null);
-//            props.setClearWeatherTime(swProps.getClearWeatherTime());
-//            props.setRainTime(swProps.getRainTime());
-//            props.setThunderTime(swProps.getThunderTime());
             props.setGameType(swProps.getGameType());
             props.setInitialized(swProps.isInitialized());
-            // TODO migrate or discard?
-//            props.setWanderingTraderId(swProps.getWanderingTraderId());
-//            props.setWanderingTraderSpawnChance(swProps.getWanderingTraderSpawnChance());
-//            props.setWanderingTraderSpawnDelay(swProps.getWanderingTraderSpawnDelay());
-//            props.setLegacyWorldBorderSettings(swProps.getLegacyWorldBorderSettings());
         }
 
         return props;
