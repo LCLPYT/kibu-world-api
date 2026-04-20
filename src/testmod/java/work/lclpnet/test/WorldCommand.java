@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.world.level.storage.LevelData;
 import work.lclpnet.kibu.world.KibuLevels;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.init.KibuWorldsInit;
@@ -130,15 +131,16 @@ public class WorldCommand {
         MinecraftServer server = source.getServer();
 
         var key = ResourceKey.create(Registries.DIMENSION, id);
-        ServerLevel world = server.getLevel(key);
+        ServerLevel level = server.getLevel(key);
 
-        if (world == null) {
+        if (level == null) {
             source.sendSystemMessage(Component.literal("World %s is not loaded".formatted(id)));
             return 0;
         }
 
         ServerPlayer player = source.getPlayerOrException();
-        player.teleportTo(world, 0, 100, 0, Set.of(), 0, 0, true);
+        LevelData.RespawnData respawnData = level.getRespawnData();
+        player.teleportTo(level, respawnData.pos().getX(), respawnData.pos().getY(), respawnData.pos().getZ(), Set.of(), respawnData.yaw(), respawnData.pitch(), true);
 
         source.sendSystemMessage(Component.literal("Teleported to " + id));
         return 1;
