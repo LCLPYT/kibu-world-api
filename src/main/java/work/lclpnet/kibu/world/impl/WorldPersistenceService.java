@@ -2,23 +2,18 @@ package work.lclpnet.kibu.world.impl;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
-import com.mojang.serialization.Lifecycle;
-import net.minecraft.core.MappedRegistry;
-import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.NbtException;
+import net.minecraft.nbt.NbtFormatException;
+import net.minecraft.nbt.ReportedNbtException;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.worldupdate.UpgradeProgress;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelSettings;
-import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.gamerules.GameRuleMap;
@@ -26,14 +21,17 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.saveddata.WeatherData;
-import net.minecraft.world.level.storage.*;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import net.minecraft.world.level.storage.LevelSummary;
+import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.storage.SavedDataStorage;
 import net.minecraft.world.level.validation.ContentValidationException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import work.lclpnet.kibu.world.KibuLevelConfig;
+import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeLevelConfig;
@@ -48,10 +46,12 @@ import java.util.Optional;
 public class WorldPersistenceService {
 
     private final MinecraftServer server;
+    private final LevelDataDeserializer dataReader;
     private final Logger logger;
 
-    public WorldPersistenceService(MinecraftServer server, Logger logger) {
+    public WorldPersistenceService(MinecraftServer server, LevelDataDeserializer dataReader, Logger logger) {
         this.server = server;
+        this.dataReader = dataReader;
         this.logger = logger;
     }
 
@@ -201,9 +201,6 @@ public class WorldPersistenceService {
     private PrimaryLevelData readPrimaryLevelData(ResourceKey<Level> registryKey, WorldGenSettings worldGenSettings) {
         Path worldDir = getWorldDirectory(registryKey);
 
-        var registryManager = server.registries().compositeAccess();
-        DataFixer dataFixer = server.getFixerUpper();
-
         LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(worldDir.getParent());
 
         String name = worldDir.getFileName().toString();
@@ -236,44 +233,11 @@ public class WorldPersistenceService {
 
             Dynamic<?> levelDataTag = DataFixers.getFileFixer().fix(access, levelDataUnfixed, new UpgradeProgress());
 
-            return readPrimaryLevelDataFromTag(worldGenSettings, levelDataTag, registryManager, dataFixer);
-        } catch (IOException | ContentValidationException e) {
-            throw new RuntimeException(e);
+            return dataReader.deserializePrimaryLevelData(worldGenSettings, levelDataTag, server);
+        } catch (IOException | ContentValidationException | NbtFormatException e) {
+            logger.error("Failed to read primary level data of level {}", registryKey, e);
+            return null;
         }
-    }
-
-    private @NonNull PrimaryLevelData readPrimaryLevelDataFromTag(
-            WorldGenSettings worldGenSettings,
-            Dynamic<?> levelDataTag,
-            RegistryAccess.Frozen registryManager,
-            DataFixer dataFixer
-    ) {
-        // adapted from net.minecraft.world.level.storage.LevelStorageSource.getLevelDataAndDimensions
-        Dynamic<?> dataTag = RegistryOps.injectRegistryContext(levelDataTag, registryManager);
-
-        Lifecycle registryLifecycle = registryManager.allRegistriesLifecycle();
-
-        // use an empty registry to only read the entries from the nbt
-        Registry<LevelStem> existingDimOptions = new MappedRegistry<>(Registries.LEVEL_STEM, registryLifecycle);
-        WorldDimensions.Complete dimensions = worldGenSettings.dimensions().bake(existingDimOptions);
-
-        WorldDataConfiguration dataConfiguration = getDataConfiguration(dataTag, dataFixer);
-        LevelSettings settings = LevelSettings.parse(dataTag, dataConfiguration);
-
-        Lifecycle lifecycle = dimensions.lifecycle().add(registryLifecycle);
-
-        return PrimaryLevelData.parse(dataTag, settings, dimensions.specialWorldProperty(), lifecycle);
-    }
-
-    @NotNull
-    private WorldDataConfiguration getDataConfiguration(Dynamic<?> data, DataFixer dataFixer) {
-        int dataVersion = NbtUtils.getDataVersion(data, -1);
-
-        Dynamic<?> dynamic = DataFixTypes.LEVEL.updateToCurrentVersion(dataFixer, data, dataVersion);
-
-        return WorldDataConfiguration.CODEC.parse(dynamic)
-                .resultOrPartial(logger::error)
-                .orElse(WorldDataConfiguration.DEFAULT);
     }
 
     @NotNull

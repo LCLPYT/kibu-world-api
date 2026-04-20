@@ -12,15 +12,15 @@ import java.nio.file.Path;
 
 public interface LevelDataWriter {
 
-    void writeLevelData(ServerLevel world, Path path);
+    void writeLevelData(ServerLevel world, Path dimensionPath);
 
     default void writeLevelData(ServerLevel world) {
         MinecraftServer server = world.getServer();
         LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
         ResourceKey<Level> registryKey = world.dimension();
 
-        Path levelDat = session.getDimensionPath(registryKey).resolve(LevelResource.LEVEL_DATA_FILE.id());
+        Path dimensionPath = session.getDimensionPath(registryKey);
 
-        writeLevelData(world, levelDat);
+        writeLevelData(world, dimensionPath);
     }
 }

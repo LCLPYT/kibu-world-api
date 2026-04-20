@@ -1,5 +1,7 @@
 package work.lclpnet.kibu.world.impl;
 
+import io.netty.util.internal.CleanerJava24Linker;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
@@ -7,7 +9,20 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.level.gamerules.GameRuleMap;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.levelgen.WorldDimensions;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
+import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.SavedDataStorage;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.data.LevelDataWriter;
@@ -33,7 +48,7 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
 
     public KibuWorldManager(MinecraftServer server) {
         this.levelDataService = new LevelDataService(KibuWorldsInit.LOGGER);
-        this.worldPersistenceService = new WorldPersistenceService(server, KibuWorldsInit.LOGGER);
+        this.worldPersistenceService = new WorldPersistenceService(server, levelDataService, KibuWorldsInit.LOGGER);
     }
 
     public Set<RuntimeLevelHandle> getRuntimeLevelHandles() {
@@ -79,7 +94,6 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
             return Optional.empty();
         }
 
-        // TODO
         if (world.getLevelData() instanceof RuntimeLevelData rtData) {
             return Optional.of(((RuntimeLevelDataAccessor) (Object) rtData).getConfig());
         }
@@ -111,15 +125,19 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
     }
 
     @Override
-    public void writeLevelData(ServerLevel world, Path path) {
-        try {
-            CompoundTag nbt = levelDataService.serializeLevelData(world);
+    public void writeLevelData(ServerLevel level, Path dimensionPath) {
+        Path levelDat = dimensionPath.resolve(LevelResource.LEVEL_DATA_FILE.id());
 
-            try (var out = Files.newOutputStream(path)) {
+        try {
+            CompoundTag nbt = levelDataService.serializeLevelData(level);
+
+            try (var out = Files.newOutputStream(levelDat)) {
                 NbtIo.writeCompressed(nbt, out);
             }
         } catch (IOException e) {
-            KibuWorldsInit.LOGGER.error("Failed to write level data to {}", path, e);
+            KibuWorldsInit.LOGGER.error("Failed to write level data to {}", levelDat, e);
         }
+
+        levelDataService.writeCustomLevelData(level);
     }
 }
