@@ -33,6 +33,8 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.data.LevelDataSerializer;
+import work.lclpnet.kibu.world.type.KibuDimensionPrimaryLevelData;
+import xyz.nucleoid.fantasy.RuntimeLevel;
 
 import java.util.Map;
 
@@ -47,9 +49,9 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
     @Override
     public CompoundTag serializeLevelData(ServerLevel level) {
-        PrimaryLevelData saveProperties = getLevelProperties(level);
+        PrimaryLevelData primaryLevelData = getOrCreatePrimaryLevelData(level);
 
-        CompoundTag data = saveProperties.createTag(null);
+        CompoundTag data = primaryLevelData.createTag(null);
 
         CompoundTag nbt = new CompoundTag();
         nbt.put("Data", data);
@@ -57,20 +59,46 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         return nbt;
     }
 
+    public PrimaryLevelData getOrCreatePrimaryLevelData(ServerLevel level) {
+        if (level instanceof RuntimeLevel runtimeLevel) {
+            return getOrCreatePrimaryLevelData(runtimeLevel);
+        }
+
+        return createPrimaryLevelData(level);
+    }
+
+    @NotNull
+    public synchronized PrimaryLevelData getOrCreatePrimaryLevelData(RuntimeLevel level) {
+        var access = (KibuDimensionPrimaryLevelData) level;
+
+        PrimaryLevelData existing = access.kibu$getPrimaryLevelData();
+
+        if (existing != null) {
+            return existing;
+        }
+
+        PrimaryLevelData levelData = createPrimaryLevelData(level);
+
+        access.kibu$setPrimaryLevelData(levelData);
+
+        return levelData;
+    }
+
     /**
      * This method creates a {@link PrimaryLevelData} object for a given {@link ServerLevel}.
      * The {@link WorldData} of the {@link MinecraftServer} are used as base.
-     * @param world The world.
-     * @return The {@link PrimaryLevelData} that can be used to save the world to disk.
+     * @param level The level.
+     * @return The {@link PrimaryLevelData} that can be used to save the level to disk.
      */
-    private PrimaryLevelData getLevelProperties(ServerLevel world) {
+    @NotNull
+    private PrimaryLevelData createPrimaryLevelData(ServerLevel level) {
         // use save properties of the server as parent (create a copy)
-        MinecraftServer server = world.getServer();
-        WorldData parent = world.getServer().getWorldData();
+        MinecraftServer server = level.getServer();
+        WorldData parent = level.getServer().getWorldData();
         PrimaryLevelData props = cloneSaveProperties(server, parent);
 
-        // now set the actual data of the world
-        LevelData levelData = world.getLevelData();
+        // now set the actual data of the level
+        LevelData levelData = level.getLevelData();
 
         props.setDifficulty(levelData.getDifficulty());
         props.setSpawn(levelData.getRespawnData());
@@ -88,14 +116,14 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
 
     /**
      * Clones given {@link WorldData} and narrows the type to {@link PrimaryLevelData}.
-     * @param properties The save properties to clone.
+     * @param parent The save properties to clone.
      * @return Cloned properties as level properties.
      */
-    private PrimaryLevelData cloneSaveProperties(MinecraftServer server, WorldData properties) {
-        CompoundTag data = properties.createTag(null);
+    private PrimaryLevelData cloneSaveProperties(MinecraftServer server, WorldData parent) {
+        CompoundTag parentTag = parent.createTag(null);
 
         CompoundTag nbt = new CompoundTag();
-        nbt.put("Data", data);
+        nbt.put("Data", parentTag);
 
         var registryManager = server.registries().compositeAccess();
         var dataTag = new Dynamic<>(registryManager.createSerializationContext(NbtOps.INSTANCE), nbt);

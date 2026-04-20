@@ -14,6 +14,7 @@ import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.data.LevelDataWriter;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
 import work.lclpnet.kibu.world.mixin.fantasy.RuntimeLevelAccessor;
+import work.lclpnet.kibu.world.type.KibuDimensionPrimaryLevelData;
 import xyz.nucleoid.fantasy.RuntimeLevel;
 import xyz.nucleoid.fantasy.RuntimeLevelHandle;
 
@@ -41,18 +42,34 @@ public class KibuWorldsInit implements ModInitializer {
         ServerLevelEvents.LOAD.register((_, world) -> {
             if (!(world instanceof RuntimeLevel runtimeLevel)) return;
 
-            // setup world border for the runtime world (method is named poorly in yarn mappings)
             runtimeLevel.getServer().getPlayerList().addWorldborderListener(runtimeLevel);
         });
 
-        ServerLevelEvents.LOAD.register((server, world) -> {
-            if (!(world instanceof RuntimeLevel runtimeLevel)) return;
+        // if a new runtime level was created or if a runtime level without level.dat was loaded,
+        // create and store a new primary level data instance for the runtime level
+        ServerLevelEvents.LOAD.register((server, level) -> {
+            if (!(level instanceof RuntimeLevel runtimeLevel)) return;
+
+            KibuDimensionPrimaryLevelData levelDataAccess = (KibuDimensionPrimaryLevelData) runtimeLevel;
+
+            if (levelDataAccess.kibu$getPrimaryLevelData() != null) return;
+
+            WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
+
+            if (!(worldManager instanceof LevelDataWriter writer)) return;
+
+            writer.getOrCreatePrimaryLevelData(level);
+        });
+
+        // writes kibu-world-api level data once directly after creating / loading a runtime level the first time
+        ServerLevelEvents.LOAD.register((server, level) -> {
+            if (!(level instanceof RuntimeLevel runtimeLevel)) return;
 
             RuntimeLevel.Style style = ((RuntimeLevelAccessor) runtimeLevel).getStyle();
 
             if (style != RuntimeLevel.Style.PERSISTENT) return;
 
-            var key = world.dimension();
+            var key = level.dimension();
 
             LevelStorageSource.LevelStorageAccess session = ((MinecraftServerAccessor) server).getStorageSource();
             Path levelDat = session.getDimensionPath(key).resolve(LevelResource.LEVEL_DATA_FILE.id());
@@ -62,7 +79,7 @@ public class KibuWorldsInit implements ModInitializer {
             WorldManager worldManager = KibuLevels.getInstance().getWorldManager(server);
 
             if (worldManager instanceof LevelDataWriter writer) {
-                writer.writeLevelData(world);
+                writer.writeLevelData(level);
             }
         });
 

@@ -1,7 +1,5 @@
 package work.lclpnet.kibu.world.impl;
 
-import io.netty.util.internal.CleanerJava24Linker;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
@@ -9,20 +7,10 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.LevelStem;
-import net.minecraft.world.level.gamerules.GameRule;
-import net.minecraft.world.level.gamerules.GameRuleMap;
-import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.levelgen.WorldDimensions;
-import net.minecraft.world.level.levelgen.WorldGenSettings;
-import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraft.world.level.storage.SavedDataStorage;
+import net.minecraft.world.level.storage.PrimaryLevelData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import work.lclpnet.kibu.world.WorldHandleTracker;
 import work.lclpnet.kibu.world.WorldManager;
 import work.lclpnet.kibu.world.data.LevelDataWriter;
@@ -139,5 +127,10 @@ public class KibuWorldManager implements WorldManager, WorldHandleTracker, Level
         }
 
         levelDataService.writeCustomLevelData(level);
+    }
+
+    @Override
+    public @NotNull PrimaryLevelData getOrCreatePrimaryLevelData(ServerLevel level) {
+        return levelDataService.getOrCreatePrimaryLevelData(level);
     }
 }
