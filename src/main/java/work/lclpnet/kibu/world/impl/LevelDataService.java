@@ -25,6 +25,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.saveddata.WeatherData;
 import net.minecraft.world.level.storage.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -76,10 +77,6 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         props.setGameTime(levelData.getGameTime());
         props.setDifficultyLocked(levelData.isDifficultyLocked());
         props.setGameTime(levelData.getGameTime());
-
-        // TODO
-//        props.setRaining(levelData.isRaining());
-//        props.setThundering(levelData.isThundering());
 
         if (levelData instanceof ServerLevelData swProps) {
             props.setGameType(swProps.getGameType());
@@ -144,11 +141,12 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
     public void writeCustomLevelData(ServerLevel level) {
         WorldGenSettings worldGenSettings = getWorldGenSettings(level);
         GameRuleMap gameRuleMap = getGameRuleMap(level);
+        WeatherData weatherData = level.getWeatherData();
 
         SavedDataStorage dataStorage = level.getDataStorage();
         dataStorage.set(WorldGenSettings.TYPE, worldGenSettings);
         dataStorage.set(GameRuleMap.TYPE, gameRuleMap);
-        // TODO weather
+        dataStorage.set(WeatherData.TYPE, weatherData);
 
         dataStorage.saveAndJoin();
     }

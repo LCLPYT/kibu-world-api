@@ -30,9 +30,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import work.lclpnet.kibu.world.KibuLevelConfig;
+import work.lclpnet.kibu.world.type.KibuDimensionPrimaryLevelData;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
+import work.lclpnet.kibu.world.type.KibuDimensionWeatherData;
 import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.fantasy.RuntimeLevelHandle;
@@ -114,7 +115,7 @@ public class WorldPersistenceService {
         @Nullable PrimaryLevelData primaryLevelData = readPrimaryLevelData(registryKey, worldGenSettings);
 
         if (primaryLevelData != null) {
-            ((KibuLevelConfig) (Object) config).kibu$setPrimaryLevelData(primaryLevelData);
+            ((KibuDimensionPrimaryLevelData) (Object) config).kibu$setPrimaryLevelData(primaryLevelData);
 
             config
                     .setFlat(primaryLevelData.isFlatWorld())
@@ -122,14 +123,8 @@ public class WorldPersistenceService {
                     .setGameTime(primaryLevelData.getGameTime());
         }
 
-
-        // TODO
-//        config.setSunny(properties.getClearWeatherTime());
-//        config.setRaining(properties.getRainTime());
-//        config.setRaining(properties.isRaining());
-//        config.setThundering(properties.isThundering());
-//        config.setThundering(properties.getThunderTime());
-//        config.setTimeOfDay(properties.getDayTime());
+        persistedData.weatherData().ifPresent(weatherData ->
+                ((KibuDimensionWeatherData) (Object) config).kibu$setDimensionWeatherData(weatherData));
 
         persistedData.gameRuleMap().ifPresent(gameRuleMap -> {
             for (GameRule<?> rule : gameRuleMap.keySet()) {
