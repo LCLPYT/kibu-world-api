@@ -14,6 +14,7 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -175,6 +176,7 @@ public class LevelDataService implements LevelDataSerializer, LevelDataDeseriali
         dataStorage.set(WorldGenSettings.TYPE, worldGenSettings);
         dataStorage.set(GameRuleMap.TYPE, gameRuleMap);
         dataStorage.set(WeatherData.TYPE, weatherData);
+        dataStorage.set(ServerClockManager.TYPE, level.clockManager());
 
         dataStorage.saveAndJoin();
     }

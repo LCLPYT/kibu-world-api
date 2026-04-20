@@ -13,6 +13,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.worldupdate.UpgradeProgress;
+import net.minecraft.world.clock.PackedClockStates;
+import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.gamerules.GameRule;
@@ -30,9 +32,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import work.lclpnet.kibu.world.type.KibuDimensionPrimaryLevelData;
 import work.lclpnet.kibu.world.data.LevelDataDeserializer;
 import work.lclpnet.kibu.world.mixin.MinecraftServerAccessor;
+import work.lclpnet.kibu.world.mixin.ServerClockManagerAccessor;
+import work.lclpnet.kibu.world.type.KibuDimensionPrimaryLevelData;
 import work.lclpnet.kibu.world.type.KibuDimensionWeatherData;
 import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeLevelConfig;
@@ -126,6 +129,12 @@ public class WorldPersistenceService {
         persistedData.weatherData().ifPresent(weatherData ->
                 ((KibuDimensionWeatherData) (Object) config).kibu$setDimensionWeatherData(weatherData));
 
+        persistedData.clockManager().ifPresent(serverClockManager -> {
+            PackedClockStates state = ((ServerClockManagerAccessor) serverClockManager).getPackedClockStates();
+
+            config.setClockManagerConstructor(state);
+        });
+
         persistedData.gameRuleMap().ifPresent(gameRuleMap -> {
             for (GameRule<?> rule : gameRuleMap.keySet()) {
                 var value = gameRuleMap.get(rule);
@@ -183,11 +192,13 @@ public class WorldPersistenceService {
             @Nullable WorldGenSettings worldGenSettings = storage.get(WorldGenSettings.TYPE);
             @Nullable GameRuleMap gameRuleMap = storage.get(GameRuleMap.TYPE);
             @Nullable WeatherData weatherData = storage.get(WeatherData.TYPE);
+            @Nullable ServerClockManager clockManager = storage.get(ServerClockManager.TYPE);
 
             return new Result(
                     Optional.ofNullable(worldGenSettings),
                     Optional.ofNullable(gameRuleMap),
-                    Optional.ofNullable(weatherData)
+                    Optional.ofNullable(weatherData),
+                    Optional.ofNullable(clockManager)
             );
         }
     }
@@ -245,6 +256,7 @@ public class WorldPersistenceService {
     private record Result(
             Optional<WorldGenSettings> worldGenSettings,
             Optional<GameRuleMap> gameRuleMap,
-            Optional<WeatherData> weatherData
+            Optional<WeatherData> weatherData,
+            Optional<ServerClockManager> clockManager
     ) {}
 }

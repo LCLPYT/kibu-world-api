@@ -21,10 +21,10 @@ This mod is part of the [kibu](https://github.com/LCLPYT/kibu) modding library, 
 1. Launch Minecraft 26.1 or later in singleplayer.
 2. Copy the dimension you want to migrate to the `saves/` directory of your singleplayer instance.
 3. In the singleplayer world selection screen, select the world and click "Upgrade and Play". Create a backup if you want. You don't need to join the world.
-4. Verify the directory of the world contains level.dat and verify that `data/minecraft/world_gen_settings.dat` exists (otherwise it will not be loadable by kibu-world api). If not, you must first create a new world to use as template or copy those files from another world.
+4. Verify the directory of the world contains `level.dat` and verify that `data/minecraft/world_gen_settings.dat` exists (otherwise it will not be loadable by kibu-world-api). If not, you must first create a new world to use as template or copy those files from another world.
 5. In the directory of the world, find the `dimensions/minecraft/overworld` directory and copy its contents directory into the world directory.
 6. Delete the `dimensions/` directory
-7. The "world" is now converted to be a "dimension" and may be copied the target dimension directory. 
+7. The "world" is now converted to be a "dimension" and may be copied to the target dimension directory. 
 
 ## Gradle Dependency
 You can install kibu-world-api via Gradle.
