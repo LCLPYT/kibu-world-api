@@ -50,9 +50,10 @@ Unlike worlds, dimensions cannot be opened in singleplayer / on a server as stan
 ## Converting a world to a dimension
 A "world" is a combination of different dimensions (overworld, nether, end, ...).
 Worlds can be joined in singleplayer and can be loaded by servers.
-Dimensions, are the singular dimensions that make up the world (e.g. overworld, or your custom dimension).
+In contrast, dimensions are the singular dimensions that make up the world (e.g. overworld, or your custom dimension).
 
 To convert a world to a dimension, you must first know the dimension of the world that you want to "convert" (usually, this is the "overworld" dimension).
+
 As kibu-world-api needs some extra files, such as level.dat and world_gen_settings.dat, you need to apply the following steps:
 
 1. In the directory of the world, find the `dimensions/minecraft/overworld` directory (or alternatively another dimension) and copy its contents directly into the world directory.
@@ -100,7 +101,7 @@ import work.lclpnet.kibu.world.WorldManager;
 WorldManager worldManager = KibuWorlds.getInstance().getWorldManager(server);
 ```
 
-### Opening a persisted world
+### Opening a persisted dimension
 You can load a persisted dimension from the `<level name>/dimensions/<namespace>/<path>` directory:
 ```java
 import net.minecraft.util.Identifier;
