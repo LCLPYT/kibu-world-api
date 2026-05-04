@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Converts a kibu-world-api dimension directory into a standalone Minecraft world.
+# Usage: dimension-to-world [dimension-dir] [target-dimension]
+#   dimension-dir      path to the dimension directory (default: current directory)
+#   target-dimension   dimension key to place it under, e.g. minecraft/overworld (default: minecraft/overworld)
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: $0 [dimension-dir] [target-dimension]" >&2
+    exit 1
+}
+
+DIM_DIR="${1:-$PWD}"
+DIM_DIR="${DIM_DIR%/}"
+TARGET_DIM="${2:-minecraft/overworld}"
+
+if [[ ! -d "$DIM_DIR" ]]; then
+    echo "Error: dimension directory '$DIM_DIR' does not exist." >&2
+    exit 1
+fi
+
+if [[ ! -d "$DIM_DIR/region" ]]; then
+    echo "Error: '$DIM_DIR' does not appear to be a valid dimension (missing region/ directory)." >&2
+    exit 1
+fi
+
+DEST="$DIM_DIR/dimensions/$TARGET_DIM"
+
+if [[ -d "$DEST" ]]; then
+    echo "Error: destination '$DEST' already exists. Aborting to avoid data loss." >&2
+    exit 1
+fi
+
+echo "Creating '$DEST'..."
+mkdir -p "$DEST"
+
+if [[ -d "$DIM_DIR/data" ]]; then
+    echo "Copying '$DIM_DIR/data/' to '$DEST/data/'..."
+    cp -r "$DIM_DIR/data" "$DEST/"
+else
+    echo "Warning: 'data/' directory not found in '$DIM_DIR'. Skipping." >&2
+fi
+
+for dir in entities poi region; do
+    if [[ -d "$DIM_DIR/$dir" ]]; then
+        echo "Moving '$DIM_DIR/$dir/' to '$DEST/$dir/'..."
+        mv "$DIM_DIR/$dir" "$DEST/"
+    else
+        echo "Warning: '$dir/' not found in '$DIM_DIR'. Skipping." >&2
+    fi
+done
+
+echo "Done. '$DIM_DIR' is now a world loadable in singleplayer or on a server."

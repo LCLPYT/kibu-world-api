@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
+
+mkdir -p "$BIN_DIR"
+
+for script in world-to-dimension dimension-to-world; do
+    echo "Installing '$script' to '$BIN_DIR'..."
+    cp "$SCRIPT_DIR/$script" "$BIN_DIR/$script"
+    chmod +x "$BIN_DIR/$script"
+done
+
+echo "Done."
+
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    echo "Note: '$BIN_DIR' is not in your PATH. Add it to your shell profile to use the scripts directly."
+fi

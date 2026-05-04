@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Converts a Minecraft world directory into a kibu-world-api dimension directory.
+# Usage: world-to-dimension [world-dir] [dimension] [--keep-players]
+#   world-dir       path to the world directory (default: current directory)
+#   dimension       dimension to extract, e.g. minecraft/overworld (default: minecraft/overworld)
+#   --keep-players  keep the players/ directory (deleted by default)
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: $0 [world-dir] [dimension] [--keep-players]" >&2
+    exit 1
+}
+
+WORLD_DIR=""
+DIMENSION="minecraft/overworld"
+KEEP_PLAYERS=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --keep-players) KEEP_PLAYERS=true ;;
+        -*) echo "Unknown option: $arg" >&2; usage ;;
+        *)
+            if [[ -z "$WORLD_DIR" ]]; then
+                WORLD_DIR="$arg"
+            elif [[ "$DIMENSION" == "minecraft/overworld" && "$arg" != "$WORLD_DIR" ]]; then
+                DIMENSION="$arg"
+            else
+                echo "Unexpected argument: $arg" >&2; usage
+            fi
+            ;;
+    esac
+done
+
+WORLD_DIR="${WORLD_DIR:-$PWD}"
+WORLD_DIR="${WORLD_DIR%/}"
+
+if [[ ! -d "$WORLD_DIR" ]]; then
+    echo "Error: world directory '$WORLD_DIR' does not exist." >&2
+    exit 1
+fi
+
+DIM_SRC="$WORLD_DIR/dimensions/$DIMENSION"
+
+if [[ ! -d "$DIM_SRC" ]]; then
+    echo "Error: dimension directory '$DIM_SRC' does not exist." >&2
+    exit 1
+fi
+
+echo "Copying contents of '$DIM_SRC' into '$WORLD_DIR'..."
+cp -r "$DIM_SRC/." "$WORLD_DIR/"
+
+echo "Removing '$WORLD_DIR/dimensions/'..."
+rm -rf "$WORLD_DIR/dimensions"
+
+if ! $KEEP_PLAYERS; then
+    echo "Removing '$WORLD_DIR/players/'..."
+    rm -rf "$WORLD_DIR/players"
+fi
+
+for leftover in "level.dat_old" "session.lock"; do
+    if [[ -e "$WORLD_DIR/$leftover" ]]; then
+        echo "Removing '$WORLD_DIR/$leftover'..."
+        rm -f "$WORLD_DIR/$leftover"
+    fi
+done
+
+MISSING=false
+for required in "level.dat" "data/minecraft/world_gen_settings.dat"; do
+    if [[ ! -f "$WORLD_DIR/$required" ]]; then
+        echo "Warning: required file '$required' is missing. Copy it from another world before loading with kibu-world-api." >&2
+        MISSING=true
+    fi
+done
+
+if $MISSING; then
+    echo "Conversion finished with warnings. Fix missing files before use." >&2
+    exit 2
+fi
+
+echo "Done. '$WORLD_DIR' is now a dimension compatible with kibu-world-api."

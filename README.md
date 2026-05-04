@@ -73,6 +73,26 @@ If you want to convert a dimension to a world, apply this steps:
 
 Now the world should be loadable in singleplayer or on servers.
 
+## Using the provided scripts
+The `scripts/` directory contains shell scripts that automate the conversions above.
+If you want to have these conversion scripts available everywhere, you can install them using the provided installer script.
+Execute `scripts/install` once to copy them into `~/.local/bin` (or `$XDG_BIN_HOME` if set).
+
+**Convert a world to a dimension:**
+```sh
+world-to-dimension [world-dir] [dimension] [--keep-players]
+```
+- `world-dir` — path to the world directory (default: current directory)
+- `dimension` — which dimension to extract, e.g. `minecraft/nether` (default: `minecraft/overworld`)
+- `--keep-players` — keep the `players/` directory (deleted by default)
+
+**Convert a dimension to a world:**
+```sh
+dimension-to-world [dimension-dir] [target-dimension]
+```
+- `dimension-dir` — path to the dimension directory (default: current directory)
+- `target-dimension` — dimension key to place it under (default: `minecraft/overworld`)
+
 ## Gradle Dependency
 You can install kibu-world-api via Gradle.
 
