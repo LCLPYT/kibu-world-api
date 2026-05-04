@@ -58,7 +58,7 @@ if ! $KEEP_PLAYERS; then
     rm -rf "$WORLD_DIR/players"
 fi
 
-for leftover in "level.dat_old" "session.lock"; do
+for leftover in "level.dat_old" "session.lock" "icon.png"; do
     if [[ -e "$WORLD_DIR/$leftover" ]]; then
         echo "Removing '$WORLD_DIR/$leftover'..."
         rm -f "$WORLD_DIR/$leftover"
